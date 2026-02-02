@@ -2,105 +2,125 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\DB;
+
 /**
  * CashFlowService
  * 
- * Manages cash flow calculations and reporting.
+ * Aggregates cash flow metrics across all accounts.
  * 
  * Formulas:
  * - Cash at Hand = Opening Balance + Inflows − Outflows
  * - Cash Runway (months) = Cash at Hand / Average Monthly Burn
  * 
- * Rules:
- * - Current balance is calculated, not stored
- * - Inflows and outflows come from cash_transactions
- * - Opening balance comes from accounts table
+ * Assumptions:
+ * - Monthly burn includes actual outflows + unpaid expenses
+ * - Burn is averaged over last 3 months (or available data)
+ * - All amounts are aggregated across accounts (no currency conversion)
  * 
  * Source: docs/_truth.md
  */
 class CashFlowService
 {
     /**
-     * Calculate cash at hand for an account
+     * Get cash flow snapshot aggregated across all accounts
      * 
-     * @param int $accountId
-     * @return float
+     * @return array [
+     *   'cash_at_hand' => float,
+     *   'total_inflows' => float,
+     *   'total_outflows' => float,
+     *   'net_cash_flow' => float,
+     *   'average_monthly_burn' => float,
+     *   'cash_runway_months' => float|null
+     * ]
      */
-    public function calculateCashAtHand(int $accountId): float
+    public function getCashFlowSnapshot(): array
     {
-        // TODO: Implement
+        // Sum opening balances from all accounts
+        $totalOpeningBalance = DB::table('accounts')
+            ->sum('opening_balance');
+
+        // Sum all inflows from cash_transactions
+        $totalInflows = DB::table('cash_transactions')
+            ->where('type', 'inflow')
+            ->sum('amount');
+
+        // Sum all outflows from cash_transactions
+        $totalOutflows = DB::table('cash_transactions')
+            ->where('type', 'outflow')
+            ->sum('amount');
+
         // Cash at Hand = Opening Balance + Inflows − Outflows
-        // Get opening_balance from accounts
-        // Sum all inflows from cash_transactions where type = 'inflow'
-        // Sum all outflows from cash_transactions where type = 'outflow'
-        
-        return 0.0;
-    }
+        $cashAtHand = $totalOpeningBalance + $totalInflows - $totalOutflows;
 
-    /**
-     * Calculate cash runway in months
-     * 
-     * @param int $accountId
-     * @return float|null Returns null if average monthly burn is 0
-     */
-    public function calculateCashRunway(int $accountId): ?float
-    {
-        // TODO: Implement
-        // Cash Runway (months) = Cash at Hand / Average Monthly Burn
-        // Calculate average monthly burn from last 3-6 months of outflows
-        
-        return null;
-    }
+        // Net Cash Flow = Inflows - Outflows
+        $netCashFlow = $totalInflows - $totalOutflows;
 
-    /**
-     * Get total cash at hand across all accounts
-     * 
-     * @param string|null $currency Filter by currency
-     * @return float
-     */
-    public function getTotalCashAtHand(?string $currency = null): float
-    {
-        // TODO: Implement
-        // Sum cash at hand for all accounts
-        // If currency specified, filter by that currency
-        // Otherwise sum all (may need currency conversion)
-        
-        return 0.0;
+        // Calculate average monthly burn (outflows only, last 3 months)
+        // Burn = actual outflows + unpaid expenses
+        $averageMonthlyBurn = $this->calculateMonthlyBurn();
+
+        // Calculate cash runway
+        // If burn = 0, runway is infinite (return null)
+        $cashRunwayMonths = null;
+        if ($averageMonthlyBurn > 0) {
+            $cashRunwayMonths = $cashAtHand / $averageMonthlyBurn;
+        }
+
+        return [
+            'cash_at_hand' => round($cashAtHand, 2),
+            'total_inflows' => round($totalInflows, 2),
+            'total_outflows' => round($totalOutflows, 2),
+            'net_cash_flow' => round($netCashFlow, 2),
+            'average_monthly_burn' => round($averageMonthlyBurn, 2),
+            'cash_runway_months' => $cashRunwayMonths !== null ? round($cashRunwayMonths, 2) : null,
+        ];
     }
 
     /**
      * Calculate average monthly burn rate
      * 
-     * @param int $accountId
-     * @param int $months Number of months to average
+     * Burn = actual outflows + unpaid expenses
+     * Averaged over last 3 months (or available data if less than 3 months)
+     * 
      * @return float
      */
-    public function calculateAverageMonthlyBurn(int $accountId, int $months = 3): float
+    private function calculateMonthlyBurn(): float
     {
-        // TODO: Implement
-        // Get all outflows for the specified number of months
-        // Calculate average per month
-        
-        return 0.0;
-    }
+        // Get date 3 months ago
+        $threeMonthsAgo = date('Y-m-d', strtotime('-3 months'));
 
-    /**
-     * Get cash flow summary for reporting
-     * 
-     * @param int $accountId
-     * @return array
-     */
-    public function getCashFlowSummary(int $accountId): array
-    {
-        // TODO: Implement
-        
-        return [
-            'opening_balance' => 0.0,
-            'total_inflows' => 0.0,
-            'total_outflows' => 0.0,
-            'cash_at_hand' => 0.0,
-            'average_monthly_burn' => 0.0,
-            'cash_runway_months' => null,
-        ];
+        // Sum outflows from last 3 months
+        $recentOutflows = DB::table('cash_transactions')
+            ->where('type', 'outflow')
+            ->where('transaction_date', '>=', $threeMonthsAgo)
+            ->sum('amount');
+
+        // Sum unpaid expenses (status != 'paid') due within the last 3 months
+        // These represent near-term cash obligations contributing to burn
+        $unpaidExpenses = DB::table('expenses')
+            ->where('status', '!=', 'paid')
+            ->where('due_date', '>=', $threeMonthsAgo)
+            ->sum('amount');
+
+        // Total burn over period
+        $totalBurn = $recentOutflows + $unpaidExpenses;
+
+        // Calculate number of months in period
+        // Use actual date range or default to 3
+        $oldestTransaction = DB::table('cash_transactions')
+            ->where('type', 'outflow')
+            ->where('transaction_date', '>=', $threeMonthsAgo)
+            ->min('transaction_date');
+
+        $monthsInPeriod = 3;
+        if ($oldestTransaction) {
+            $start = strtotime($oldestTransaction);
+            $end = time();
+            $monthsInPeriod = max(1, round(($end - $start) / (30 * 24 * 60 * 60)));
+        }
+
+        // Average monthly burn
+        return $totalBurn / $monthsInPeriod;
     }
 }

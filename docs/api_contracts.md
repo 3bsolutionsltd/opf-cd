@@ -1,89 +1,88 @@
-# OPF-CD — Source of Truth
+# OPF-CD API Contracts (LOCKED)
 
-This document is the authoritative reference for the internal Operations, Projects & Finance Command Dashboard.
-If a rule or structure is not defined here, it must not be invented in code.
-
----
-
-## Core Principles
-- Work progress ≠ payment received
-- Financial records are immutable after posting
-- All calculations are deterministic and explainable
-- Controllers contain no business logic
-- Services contain all calculations
-- Dashboards are derived, never stored
+These contracts are FINAL.
+No service, controller, or frontend may alter shapes or add wrappers.
 
 ---
 
-## Modules
-1. Projects & Tasks
-2. Payments & Billing
-3. Company Expenses
-4. Cash Management
-5. Opportunities Pipeline
-6. Project Health Index (PHI)
-7. Alerts & Reports
+## Projects
+
+### GET /projects/{id}/progress
+Response:
+<number>  // float 0–100
+
+Example:
+67.5
 
 ---
 
-## Project Progress
-Project progress is calculated as the weighted sum of task progress.
-
-Formula:
-Project Progress = Σ(task.progress × task.weight / 100)
-
-Rules:
-- Task weights must sum to 100
-- Task progress is between 0 and 100
-- Completed tasks must have progress = 100
-
----
-
-## Payments
-- Projects have payment milestones
-- Payments can be Pending, Invoiced, or Paid
-- Payment received percentage is:
-  (Total Paid / Contract Value) × 100
+### GET /projects/{id}/payment-gap
+Response:
+{
+  "gap_amount": number,
+  "gap_percentage": number,
+  "progress": number,
+  "earned_value": number,
+  "received_value": number,
+  "contract_value": number
+}
 
 ---
 
-## Payment Gap
-Payment Gap = Project Progress % − Payment Received %
-
-If Payment Gap > 20%, the project is financially at risk.
-
----
-
-## Expenses
-- Expenses are either recurring or one-off
-- Recurring expenses auto-generate future instances
-- Paid expenses cannot be edited
+### GET /projects/{id}/health
+Response:
+{
+  "project_id": number,
+  "health_status": "green" | "amber" | "red",
+  "score": number,
+  "signals": object,
+  "reasons": string[]
+}
 
 ---
 
-## Cash
-Cash at Hand = Opening Balance + Inflows − Outflows
+## Finance
 
-Cash Runway (months) =
-Cash at Hand / Average Monthly Burn
+### GET /finance/cash-flow
+Response:
+{
+  "cash_at_hand": number,
+  "total_inflows": number,
+  "total_outflows": number,
+  "net_cash_flow": number,
+  "average_monthly_burn": number,
+  "cash_runway_months": number | null
+}
 
 ---
 
-## Opportunities
-Weighted Pipeline Value =
-Σ(opportunity.value × probability / 100)
+### GET /finance/expenses/upcoming
+Response:
+Array<{
+  "expense_id": number,
+  "name": string,
+  "category": string,
+  "amount": number,
+  "currency": string,
+  "due_date": string (YYYY-MM-DD),
+  "type": "one_off" | "recurring",
+  "source": "original" | "projected"
+}>
 
 ---
 
-## Project Health Index (PHI)
+## Sales
 
-PHI Score = 
-(time_score × 0.3) +
-(payment_score × 0.3) +
-(blocker_score × 0.2) +
-(overdue_score × 0.2)
-
-Health Bands:
-- Green ≥ 80
-- Yellow 50–79
-- Red < 50
+### GET /sales/pipeline
+Response:
+{
+  "total_pipeline_value": number,
+  "weighted_pipeline_value": number,
+  "opportunity_count": number,
+  "by_stage": Array<{
+    "stage": string,
+    "count": number,
+    "total_value": number,
+    "weighted_value": number
+  }>
+}

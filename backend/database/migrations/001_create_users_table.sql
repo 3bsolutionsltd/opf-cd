@@ -35,5 +35,5 @@ COMMENT ON TABLE users IS 'Internal users for the OPF-CD system';
 COMMENT ON COLUMN users.email IS 'Unique email address used for authentication';
 COMMENT ON COLUMN users.password_hash IS 'Hashed password - never store plain text';
 COMMENT ON COLUMN users.role IS 'User role determines system permissions';
-COMMENT ON COLUMN users.is_active IS 'Soft delete flag - false means user is disabled';
+COMMENT ON COLUMN users.is_active IS 'Account status flag - false means user is disabled';
 COMMENT ON COLUMN users.last_login_at IS 'Timestamp of most recent successful login';

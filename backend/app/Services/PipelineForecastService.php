@@ -2,106 +2,92 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\DB;
+
 /**
  * PipelineForecastService
  * 
- * Manages sales pipeline forecasting and weighted value calculations.
+ * Calculates weighted pipeline value for sales forecasting.
  * 
  * Formula:
- * Weighted Pipeline Value = Σ(opportunity.value × probability / 100)
+ * Weighted Pipeline Value = Σ(opportunity.estimated_value × probability / 100)
  * 
  * Rules:
- * - Only include opportunities in active stages (not won/lost)
- * - Probability is between 0 and 100
- * - Weighted value gives realistic revenue forecast
+ * - Only includes opportunities where stage != 'lost' and expected_close_date >= today
+ * - Probability is a percentage (0-100)
+ * - No currency conversion applied
  * 
  * Source: docs/_truth.md
  */
 class PipelineForecastService
 {
     /**
-     * Calculate weighted pipeline value
+     * Get pipeline forecast with aggregated metrics and breakdown by stage
      * 
-     * @param array|null $stages Filter by specific stages
-     * @return float
+     * @return array [
+     *   'total_pipeline_value' => float,
+     *   'weighted_pipeline_value' => float,
+     *   'opportunity_count' => int,
+     *   'by_stage' => [
+     *     ['stage' => string, 'count' => int, 'total_value' => float, 'weighted_value' => float],
+     *     ...
+     *   ]
+     * ]
      */
-    public function calculateWeightedPipelineValue(?array $stages = null): float
+    public function getPipelineForecast(): array
     {
-        // TODO: Implement
-        // Weighted Pipeline Value = Σ(opportunity.value × probability / 100)
-        // If stages specified, filter opportunities by those stages
-        // Otherwise include all non-won/lost opportunities
-        
-        return 0.0;
-    }
+        $today = date('Y-m-d');
 
-    /**
-     * Get pipeline summary by stage
-     * 
-     * @return array
-     */
-    public function getPipelineSummaryByStage(): array
-    {
-        // TODO: Implement
-        // Group opportunities by stage
-        // Calculate count, total value, and weighted value per stage
-        
+        // Get all opportunities where stage != 'lost' and expected_close_date >= today
+        $opportunities = DB::table('opportunities')
+            ->where('stage', '!=', 'lost')
+            ->where('expected_close_date', '>=', $today)
+            ->select('stage', 'estimated_value', 'probability')
+            ->get();
+
+        // Calculate overall metrics
+        $totalPipelineValue = 0.0;
+        $weightedPipelineValue = 0.0;
+        $opportunityCount = $opportunities->count();
+
+        // Group by stage for breakdown
+        $byStage = [];
+
+        foreach ($opportunities as $opportunity) {
+            // Aggregate totals
+            $totalPipelineValue += $opportunity->estimated_value;
+            
+            // Weighted Pipeline Value = estimated_value × (probability / 100)
+            $weightedValue = $opportunity->estimated_value * ($opportunity->probability / 100);
+            $weightedPipelineValue += $weightedValue;
+
+            // Group by stage
+            if (!isset($byStage[$opportunity->stage])) {
+                $byStage[$opportunity->stage] = [
+                    'stage' => $opportunity->stage,
+                    'count' => 0,
+                    'total_value' => 0.0,
+                    'weighted_value' => 0.0,
+                ];
+            }
+
+            $byStage[$opportunity->stage]['count']++;
+            $byStage[$opportunity->stage]['total_value'] += $opportunity->estimated_value;
+            $byStage[$opportunity->stage]['weighted_value'] += $weightedValue;
+        }
+
+        // Convert byStage to array and round values
+        $stageBreakdown = array_values($byStage);
+        foreach ($stageBreakdown as &$stage) {
+            $stage['total_value'] = round($stage['total_value'], 2);
+            $stage['weighted_value'] = round($stage['weighted_value'], 2);
+        }
+
         return [
-            'lead' => ['count' => 0, 'total_value' => 0.0, 'weighted_value' => 0.0],
-            'qualified' => ['count' => 0, 'total_value' => 0.0, 'weighted_value' => 0.0],
-            'proposal' => ['count' => 0, 'total_value' => 0.0, 'weighted_value' => 0.0],
-            'negotiation' => ['count' => 0, 'total_value' => 0.0, 'weighted_value' => 0.0],
-            'won' => ['count' => 0, 'total_value' => 0.0, 'weighted_value' => 0.0],
-            'lost' => ['count' => 0, 'total_value' => 0.0, 'weighted_value' => 0.0],
-        ];
-    }
-
-    /**
-     * Get opportunities closing within a date range
-     * 
-     * @param string $startDate
-     * @param string $endDate
-     * @return array
-     */
-    public function getOpportunitiesClosingBetween(string $startDate, string $endDate): array
-    {
-        // TODO: Implement
-        // Get opportunities with expected_close_date in the range
-        // Include weighted value calculations
-        
-        return [];
-    }
-
-    /**
-     * Get pipeline forecast by owner
-     * 
-     * @return array
-     */
-    public function getPipelineForecastByOwner(): array
-    {
-        // TODO: Implement
-        // Group opportunities by owner
-        // Calculate weighted value per owner
-        
-        return [];
-    }
-
-    /**
-     * Calculate win rate statistics
-     * 
-     * @return array
-     */
-    public function calculateWinRateStatistics(): array
-    {
-        // TODO: Implement
-        // Calculate overall win rate (won / (won + lost))
-        // Calculate by stage, by owner, by source
-        
-        return [
-            'overall_win_rate' => 0.0,
-            'total_won' => 0,
-            'total_lost' => 0,
-            'total_active' => 0,
+            'total_pipeline_value' => round($totalPipelineValue, 2),
+            'weighted_pipeline_value' => round($weightedPipelineValue, 2),
+            'opportunity_count' => $opportunityCount,
+            'by_stage' => $stageBreakdown,
         ];
     }
 }

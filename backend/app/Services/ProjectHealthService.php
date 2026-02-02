@@ -2,165 +2,151 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\DB;
+use DateTime;
+use DateInterval;
+
 /**
  * ProjectHealthService
  * 
- * Calculates Project Health Index (PHI) for project monitoring.
- * 
- * Formula:
- * PHI Score = (time_score × 0.3) + (payment_score × 0.3) + (blocker_score × 0.2) + (overdue_score × 0.2)
- * 
- * Health Bands:
- * - Green ≥ 80
- * - Yellow 50–79
- * - Red < 50
+ * Synthesizes project health status by aggregating signals from multiple services
+ * and applying a penalty-based scoring model.
  * 
  * Rules:
- * - PHI is calculated, never stored
- * - All scores are 0-100
- * - Weights must sum to 1.0 (30% + 30% + 20% + 20%)
+ * - Does NOT recalculate metrics (delegates to specialized services)
+ * - Performs judgment and synthesis only
+ * - Scoring model: starts at 100, applies penalties, clamps to 0-100
+ * - Health bands: Green (80+), Amber (50-79), Red (<50)
  * 
  * Source: docs/_truth.md
  */
 class ProjectHealthService
 {
-    /**
-     * Calculate Project Health Index (PHI) for a project
-     * 
-     * @param int $projectId
-     * @return array ['score' => float, 'band' => string, 'components' => array]
-     */
-    public function calculateProjectHealth(int $projectId): array
-    {
-        // TODO: Implement
-        // 1. Calculate time_score (0-100)
-        // 2. Calculate payment_score (0-100)
-        // 3. Calculate blocker_score (0-100)
-        // 4. Calculate overdue_score (0-100)
-        // 5. Apply weights: PHI = (time × 0.3) + (payment × 0.3) + (blocker × 0.2) + (overdue × 0.2)
-        // 6. Determine band (Green/Yellow/Red)
-        
-        return [
-            'score' => 0.0,
-            'band' => 'red',
-            'components' => [
-                'time_score' => 0.0,
-                'payment_score' => 0.0,
-                'blocker_score' => 0.0,
-                'overdue_score' => 0.0,
-            ],
-        ];
+    private ProjectProgressService $progressService;
+    private PaymentGapService $paymentGapService;
+    private CashFlowService $cashFlowService;
+    private PipelineForecastService $pipelineService;
+    private ExpenseSchedulerService $expenseService;
+
+    public function __construct(
+        ProjectProgressService $progressService,
+        PaymentGapService $paymentGapService,
+        CashFlowService $cashFlowService,
+        PipelineForecastService $pipelineService,
+        ExpenseSchedulerService $expenseService
+    ) {
+        $this->progressService = $progressService;
+        $this->paymentGapService = $paymentGapService;
+        $this->cashFlowService = $cashFlowService;
+        $this->pipelineService = $pipelineService;
+        $this->expenseService = $expenseService;
     }
 
     /**
-     * Calculate time score component
+     * Calculate project health index (PHI) with penalty-based scoring
      * 
      * @param int $projectId
-     * @return float 0-100
+     * @return array [
+     *   'project_id' => int,
+     *   'health_status' => string (green|amber|red),
+     *   'score' => int (0-100),
+     *   'signals' => array (key numeric inputs),
+     *   'reasons' => array (human-readable penalty explanations)
+     * ]
      */
-    protected function calculateTimeScore(int $projectId): float
+    public function getProjectHealth(int $projectId): array
     {
-        // TODO: Implement
-        // Consider: days remaining vs total duration, on schedule status
-        // 100 = well ahead of schedule, 0 = significantly behind
-        
-        return 0.0;
-    }
+        // Gather signals from all services
+        $paymentGap = $this->paymentGapService->calculatePaymentGap($projectId);
+        $projectProgress = $this->progressService->calculateProjectProgress($projectId);
+        $cashFlow = $this->cashFlowService->getCashFlowSnapshot();
+        $pipeline = $this->pipelineService->getPipelineForecast();
+        $upcomingExpenses = $this->expenseService->getUpcomingExpenses();
 
-    /**
-     * Calculate payment score component
-     * 
-     * @param int $projectId
-     * @return float 0-100
-     */
-    protected function calculatePaymentScore(int $projectId): float
-    {
-        // TODO: Implement
-        // Based on payment gap
-        // 100 = payments ahead of work, 0 = large payment gap
-        // Use PaymentGapService
-        
-        return 0.0;
-    }
-
-    /**
-     * Calculate blocker score component
-     * 
-     * @param int $projectId
-     * @return float 0-100
-     */
-    protected function calculateBlockerScore(int $projectId): float
-    {
-        // TODO: Implement
-        // Based on number and severity of blocked tasks
-        // 100 = no blockers, 0 = critical blockers
-        
-        return 0.0;
-    }
-
-    /**
-     * Calculate overdue score component
-     * 
-     * @param int $projectId
-     * @return float 0-100
-     */
-    protected function calculateOverdueScore(int $projectId): float
-    {
-        // TODO: Implement
-        // Based on number and age of overdue tasks
-        // 100 = no overdue tasks, 0 = many overdue tasks
-        
-        return 0.0;
-    }
-
-    /**
-     * Determine health band from score
-     * 
-     * @param float $score
-     * @return string 'green', 'yellow', or 'red'
-     */
-    protected function determineHealthBand(float $score): string
-    {
-        if ($score >= 80) {
-            return 'green';
-        } elseif ($score >= 50) {
-            return 'yellow';
-        } else {
-            return 'red';
+        // Get project status
+        $project = DB::table('projects')->where('id', $projectId)->first();
+        if (!$project) {
+            throw new \InvalidArgumentException("Project not found: {$projectId}");
         }
-    }
-
-    /**
-     * Get all projects by health band
-     * 
-     * @param string $band 'green', 'yellow', or 'red'
-     * @return array
-     */
-    public function getProjectsByHealthBand(string $band): array
-    {
-        // TODO: Implement
-        // Calculate PHI for all projects
-        // Filter by requested band
         
-        return [];
-    }
+        $paymentGapPercentage = $paymentGap['gap_percentage'];
+        $cashRunwayMonths = $cashFlow['cash_runway_months'];
+        $weightedPipelineValue = $pipeline['weighted_pipeline_value'];
 
-    /**
-     * Get health summary for all projects
-     * 
-     * @return array
-     */
-    public function getHealthSummary(): array
-    {
-        // TODO: Implement
-        // Calculate PHI for all active projects
-        // Group by health band
-        
+        // Count expenses in next 30 days
+        $today = new DateTime();
+        $thirtyDaysOut = (clone $today)->add(new DateInterval('P30D'));
+        $expensesNext30Days = array_filter($upcomingExpenses, function ($expense) use ($today, $thirtyDaysOut) {
+            $dueDate = new DateTime($expense['due_date']);
+            return $dueDate >= $today && $dueDate <= $thirtyDaysOut;
+        });
+        $expenseCount30Days = count($expensesNext30Days);
+
+        // Apply scoring model
+        $score = 100;
+        $reasons = [];
+
+        // Payment gap penalties
+        if ($paymentGapPercentage > 40) {
+            $score -= 40;
+            $reasons[] = "Payment gap exceeds 40% of earned value";
+        } elseif ($paymentGapPercentage > 20) {
+            $score -= 25;
+            $reasons[] = "Payment gap exceeds 20% of earned value";
+        }
+
+        // Project progress penalty
+        if ($projectProgress < 50 && $project->status === 'active') {
+            $score -= 15;
+            $reasons[] = "Project progress below 50% while active";
+        }
+
+        // Cash runway penalties
+        if ($cashRunwayMonths < 1) {
+            $score -= 50;
+            $reasons[] = "Cash runway below 1 month";
+        } elseif ($cashRunwayMonths < 3) {
+            $score -= 30;
+            $reasons[] = "Cash runway below 3 months";
+        }
+
+        // Pipeline penalty
+        if ($weightedPipelineValue == 0) {
+            $score -= 20;
+            $reasons[] = "No weighted pipeline value";
+        }
+
+        // Upcoming expenses penalty
+        if ($expenseCount30Days > 5) {
+            $score -= 15;
+            $reasons[] = "More than 5 expenses due in next 30 days";
+        }
+
+        // Clamp score
+        $score = max(0, min(100, $score));
+
+        // Determine health status
+        if ($score >= 80) {
+            $healthStatus = 'green';
+        } elseif ($score >= 50) {
+            $healthStatus = 'amber';
+        } else {
+            $healthStatus = 'red';
+        }
+
         return [
-            'green_count' => 0,
-            'yellow_count' => 0,
-            'red_count' => 0,
-            'total_count' => 0,
+            'project_id' => $projectId,
+            'health_status' => $healthStatus,
+            'score' => $score,
+            'signals' => [
+                'payment_gap_percentage' => round($paymentGapPercentage, 2),
+                'project_progress' => $projectProgress,
+                'project_status' => $project->status,
+                'cash_runway_months' => $cashRunwayMonths,
+                'weighted_pipeline_value' => $weightedPipelineValue,
+                'expenses_next_30_days' => $expenseCount30Days,
+            ],
+            'reasons' => $reasons,
         ];
     }
 }

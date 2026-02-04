@@ -1,3 +1,11 @@
+{{-- 
+STRICT VIEW RULE:
+This view renders data only.
+No calculations.
+No decisions.
+No service calls.
+--}}
+
 <div x-data="{
     total_pipeline_value: null,
     weighted_pipeline_value: null,
@@ -5,7 +13,7 @@
     by_stage: [],
     loading: true
 }" x-init="
-    fetch('/sales/pipeline')
+    fetch('/api/sales/pipeline')
         .then(response => response.json())
         .then(data => {
             total_pipeline_value = data.total_pipeline_value;

@@ -44,7 +44,6 @@ class PaymentGapService
      */
     public function calculatePaymentGap(int $projectId): array
     {
-        // Fetch project and validate
         $project = DB::table('projects')
             ->where('id', $projectId)
             ->first(['id', 'contract_value', 'contract_currency']);
@@ -53,53 +52,13 @@ class PaymentGapService
             throw new InvalidArgumentException("Project with ID {$projectId} not found");
         }
 
-        // Validate contract value
         if ($project->contract_value <= 0) {
             throw new InvalidArgumentException("Project {$projectId} has invalid contract_value: {$project->contract_value}");
         }
 
-        // Get project progress from ProjectProgressService
         $progress = $this->progressService->calculateProjectProgress($projectId);
-
-        // Calculate earned value based on progress
-        // Earned Value = Contract Value × (Progress / 100)
         $earnedValue = $project->contract_value * ($progress / 100);
 
-        // Fetch total received value from cash_transactions
-        // Only inflows with source_type = 'project_payment' related to this project
-        $receivedValue = $this->calculateReceivedValue($projectId);
-
-        // Calculate gap amount and percentage
-        // Gap Amount = Earned Value - Received Value
-        $gapAmount = $earnedValue - $receivedValue;
-
-        // Gap Percentage = (Gap Amount / Contract Value) × 100
-        $gapPercentage = ($gapAmount / $project->contract_value) * 100;
-
-        // Clamp percentage between -100 and 100
-        $gapPercentage = max(-100, min(100, $gapPercentage));
-
-        return [
-            'gap_amount' => round($gapAmount, 2),
-            'gap_percentage' => round($gapPercentage, 2),
-            'progress' => round($progress, 2),
-            'earned_value' => round($earnedValue, 2),
-            'received_value' => round($receivedValue, 2),
-            'contract_value' => $project->contract_value,
-        ];
-    }
-
-    /**
-     * Calculate total received value for a project from cash transactions
-     * 
-     * @param int $projectId
-     * @return float
-     */
-    private function calculateReceivedValue(int $projectId): float
-    {
-        // Sum all inflow transactions with source_type = 'project_payment'
-        // The source_id should reference payment_milestones
-        // We need to join to payment_milestones to filter by project_id
         $receivedValue = DB::table('cash_transactions')
             ->join('payment_milestones', function ($join) {
                 $join->on('cash_transactions.source_id', '=', 'payment_milestones.id')
@@ -109,6 +68,17 @@ class PaymentGapService
             ->where('cash_transactions.type', 'inflow')
             ->sum('cash_transactions.amount');
 
-        return (float) $receivedValue;
+        $gapAmount = $earnedValue - $receivedValue;
+        $gapPercentage = ($gapAmount / $project->contract_value) * 100;
+        $gapPercentage = max(-100, min(100, $gapPercentage));
+
+        return [
+            'gap_amount' => round($gapAmount, 2),
+            'gap_percentage' => round($gapPercentage, 2),
+            'progress' => round($progress, 2),
+            'earned_value' => round($earnedValue, 2),
+            'received_value' => round((float) $receivedValue, 2),
+            'contract_value' => (float) $project->contract_value,
+        ];
     }
 }

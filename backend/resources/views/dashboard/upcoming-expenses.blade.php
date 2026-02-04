@@ -1,8 +1,16 @@
+{{-- 
+STRICT VIEW RULE:
+This view renders data only.
+No calculations.
+No decisions.
+No service calls.
+--}}
+
 <div x-data="{
     expenses: [],
     loading: true
 }" x-init="
-    fetch('/finance/expenses/upcoming')
+    fetch('/api/finance/expenses/upcoming')
         .then(response => response.json())
         .then(data => {
             expenses = data;

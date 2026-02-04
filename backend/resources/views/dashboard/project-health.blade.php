@@ -1,3 +1,11 @@
+{{-- 
+STRICT VIEW RULE:
+This view renders data only.
+No calculations.
+No decisions.
+No service calls.
+--}}
+
 <div x-data="{
     project_id: null,
     health_status: null,
@@ -7,7 +15,7 @@
     projectId: {{ $projectId }},
     loading: true
 }" x-init="
-    fetch(`/projects/${projectId}/health`)
+    fetch(`/api/projects/${projectId}/health`)
         .then(response => response.json())
         .then(data => {
             project_id = data.project_id;
@@ -38,7 +46,7 @@
         
         <div>
             <span>Signals:</span>
-            <span x-text="JSON.stringify(signals)"></span>
+            <span x-text="signals"></span>
         </div>
         
         <div>

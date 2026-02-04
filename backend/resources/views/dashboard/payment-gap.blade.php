@@ -1,3 +1,11 @@
+{{-- 
+STRICT VIEW RULE:
+This view renders data only.
+No calculations.
+No decisions.
+No service calls.
+--}}
+
 <div x-data="{
     gap_amount: null,
     gap_percentage: null,
@@ -8,7 +16,7 @@
     projectId: {{ $projectId }},
     loading: true
 }" x-init="
-    fetch(`/projects/${projectId}/payment-gap`)
+    fetch(`/api/projects/${projectId}/payment-gap`)
         .then(response => response.json())
         .then(data => {
             gap_amount = data.gap_amount;
@@ -30,12 +38,12 @@
         
         <div>
             <span>Gap Percentage:</span>
-            <span x-text="gap_percentage + '%'"></span>
+            <span x-text="gap_percentage"></span>
         </div>
         
         <div>
             <span>Progress:</span>
-            <span x-text="progress + '%'"></span>
+            <span x-text="progress"></span>
         </div>
         
         <div>

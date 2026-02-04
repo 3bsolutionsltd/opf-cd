@@ -148,6 +148,47 @@ Do NOT explain.
 Return ONE sentence only.
 
 ---
+## PROMPT — DASHBOARD ROUTING (BLADE)
+
+Follow the rules in docs/copilot_rules.md.
+
+Context:
+- OPF-CD Phase 1 APIs are COMPLETE and LOCKED.
+- Blade views already exist under:
+  resources/views/dashboard/
+- API routes live in routes/api.php and MUST NOT be modified.
+
+Task:
+Create the MINIMUM web-layer wiring required to render existing Blade dashboard views.
+
+Requirements:
+- Create a DashboardController that ONLY maps routes to Blade views.
+- Do NOT inject services.
+- Do NOT call APIs inside the controller.
+- Do NOT add logic, calculations, or transformations.
+- Each method returns exactly one Blade view with minimal parameters (e.g. projectId).
+
+Routes:
+- Register routes ONLY in routes/web.php
+- Use prefix: /dashboard
+
+Views to wire:
+- /dashboard/project-progress/{id} → dashboard.project-progress
+- /dashboard/payment-gap/{id} → dashboard.payment-gap
+- /dashboard/project-health/{id} → dashboard.project-health
+- /dashboard/cash-flow → dashboard.cash-flow
+- /dashboard/upcoming-expenses → dashboard.upcoming-expenses
+- /dashboard/sales-pipeline → dashboard.sales-pipeline
+
+Output:
+- DashboardController.php
+- routes/web.php additions only
+
+Do NOT explain.
+Do NOT suggest improvements.
+Do NOT modify existing files beyond what is explicitly requested.
+
+---
 
 ## FINAL NOTE
 

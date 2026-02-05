@@ -13,6 +13,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         [x-cloak] { display: none !important; }
+        option { background-color: rgb(15 23 42); color: rgb(243 244 246); }
     </style>
 </head>
 <body class="min-h-full bg-slate-950 text-gray-100">

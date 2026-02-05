@@ -21,6 +21,11 @@
             padding: 40px 20px;
         }
 
+        option {
+            background-color: rgb(15 23 42);
+            color: rgb(243 244 246);
+        }
+
         .container {
             max-width: 800px;
             margin: 0 auto;

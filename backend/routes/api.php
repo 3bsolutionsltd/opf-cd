@@ -103,8 +103,8 @@ Route::middleware(['check.permission:milestones,delete'])->group(function () {
 // Expenses management endpoints (protected)
 Route::middleware(['check.permission:expenses,view'])->group(function () {
     Route::get('/expenses', [ExpenseController::class, 'apiIndex']);
-    Route::get('/expenses/{expenseId}', [ExpenseController::class, 'apiShow']);
     Route::get('/expenses/summary', [ExpenseController::class, 'getExpensesSummary']);
+    Route::get('/expenses/{expenseId}', [ExpenseController::class, 'apiShow']);
 });
 
 Route::middleware(['check.permission:expenses,create'])->group(function () {

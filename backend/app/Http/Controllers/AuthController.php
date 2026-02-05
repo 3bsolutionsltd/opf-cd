@@ -77,10 +77,7 @@ class AuthController extends Controller
     {
         $this->sessionService->destroySession();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Logged out successfully'
-        ]);
+        return redirect('/');
     }
 
     /**

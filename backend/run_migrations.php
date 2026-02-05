@@ -11,6 +11,9 @@ $migrations = [
     '007_create_cash_transactions_table.sql',
     '008_create_opportunities_table.sql',
     '009_create_exchange_rates_table.sql',
+    '009_create_roles_table.sql',
+    '010_create_user_roles_table.sql',
+    '011_create_permissions_table.sql',
 ];
 
 foreach ($migrations as $migration) {

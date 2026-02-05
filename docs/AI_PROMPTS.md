@@ -140,8 +140,8 @@ Prompt:
 
 Follow the rules in docs/copilot_rules.md.
 
-Based on the CURRENT STATE of the OPF-CD system,
-identify the SINGLE next allowed action.
+Based on the CURRENT STATE and PRODUCTION_ROADMAP.md of the OPF-CD system
+identify the next allowed actions.
 
 Do NOT list options.
 Do NOT explain.

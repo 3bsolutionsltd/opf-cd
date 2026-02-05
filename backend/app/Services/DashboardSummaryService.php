@@ -1,0 +1,118 @@
+<?php
+
+namespace App\Services;
+
+use Illuminate\Support\Facades\DB;
+
+/**
+ * DashboardSummaryService
+ * 
+ * Provides high-level summary metrics for the landing page dashboard.
+ * Aggregates key statistics across projects, finance, and sales.
+ * 
+ * All calculations follow business rules defined in docs/_truth.md
+ * 
+ * Source: docs/_truth.md
+ */
+class DashboardSummaryService
+{
+    public function __construct(
+        private ProjectHealthService $projectHealthService
+    ) {}
+
+    /**
+     * Get dashboard summary with key metrics
+     * 
+     * @return array [
+     *   'total_projects' => int,
+     *   'active_projects' => int,
+     *   'cash_at_hand' => float,
+     *   'total_pipeline_value' => float,
+     *   'total_upcoming_expenses' => float,
+     *   'average_project_health' => string (green|amber|red),
+     *   'projects_at_risk' => int,
+     *   'currency' => string
+     * ]
+     */
+    public function getSummary(): array
+    {
+        // Total and active projects
+        $totalProjects = DB::table('projects')->count();
+        $activeProjects = DB::table('projects')
+            ->where('status', 'active')
+            ->count();
+
+        // Cash at hand calculation
+        $totalOpeningBalance = DB::table('accounts')
+            ->sum('opening_balance') ?? 0;
+
+        $totalInflows = DB::table('cash_transactions')
+            ->where('type', 'inflow')
+            ->sum('amount') ?? 0;
+
+        $totalOutflows = DB::table('cash_transactions')
+            ->where('type', 'outflow')
+            ->sum('amount') ?? 0;
+
+        $cashAtHand = $totalOpeningBalance + $totalInflows - $totalOutflows;
+
+        // Total pipeline value
+        $totalPipelineValue = DB::table('opportunities')
+            ->sum('estimated_value') ?? 0;
+
+        // Upcoming expenses (next 90 days)
+        $ninetyDaysFromNow = date('Y-m-d', strtotime('+90 days'));
+        $totalUpcomingExpenses = DB::table('expenses')
+            ->where('due_date', '<=', $ninetyDaysFromNow)
+            ->where('status', '!=', 'paid')
+            ->sum('amount') ?? 0;
+
+        // Project health summary - calculate health for active projects only
+        $activeProjectIds = DB::table('projects')
+            ->where('status', 'active')
+            ->pluck('id');
+
+        $healthStatuses = [];
+        $projectsAtRisk = 0;
+
+        foreach ($activeProjectIds as $projectId) {
+            $healthData = $this->projectHealthService->getProjectHealth((int) $projectId);
+            $status = $healthData['health_status'] ?? 'amber';
+            
+            $healthStatuses[] = $status;
+            
+            if ($status === 'red') {
+                $projectsAtRisk++;
+            }
+        }
+
+        // Determine average health status
+        $greenCount = count(array_filter($healthStatuses, fn($s) => $s === 'green'));
+        $redCount = count(array_filter($healthStatuses, fn($s) => $s === 'red'));
+        $amberCount = count(array_filter($healthStatuses, fn($s) => $s === 'amber'));
+
+        if (empty($healthStatuses)) {
+            $averageHealth = 'green'; // No active projects = all good
+        } elseif ($greenCount > $redCount && $greenCount > $amberCount) {
+            $averageHealth = 'green';
+        } elseif ($redCount > 0 && $redCount >= $amberCount) {
+            $averageHealth = 'red';
+        } else {
+            $averageHealth = 'amber';
+        }
+
+        // Default currency
+        $currency = 'USD';
+
+        return [
+            'total_projects' => $totalProjects,
+            'active_projects' => $activeProjects,
+            'cash_at_hand' => round($cashAtHand, 2),
+            'total_pipeline_value' => round($totalPipelineValue, 2),
+            'total_upcoming_expenses' => round($totalUpcomingExpenses, 2),
+            'average_project_health' => $averageHealth,
+            'projects_at_risk' => $projectsAtRisk,
+            'currency' => $currency,
+        ];
+    }
+}

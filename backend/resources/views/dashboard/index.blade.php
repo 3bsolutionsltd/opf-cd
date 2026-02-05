@@ -711,11 +711,11 @@
                         class="stat-badge" 
                         x-show="!loading && summary"
                         :class="{
-                            'green': summary?.average_project_health === 'green',
-                            'amber': summary?.average_project_health === 'amber',
-                            'red': summary?.average_project_health === 'red'
+                            'green': averageProjectHealth === 'green',
+                            'amber': averageProjectHealth === 'amber',
+                            'red': averageProjectHealth === 'red'
                         }"
-                        x-text="(summary?.average_project_health || '').toUpperCase()"
+                        x-text="averageProjectHealth.toUpperCase()"
                     ></span>
                     <span x-show="loading">...</span>
                 </div>

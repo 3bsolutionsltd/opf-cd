@@ -670,7 +670,9 @@ Response:
   "cash_at_hand": number,
   "total_pipeline_value": number,
   "total_upcoming_expenses": number,
-  "average_project_health": "green" | "amber" | "red",
+  "health_green_count": number,
+  "health_red_count": number,
+  "health_amber_count": number,
   "projects_at_risk": number,
   "currency": string
 }
@@ -682,7 +684,9 @@ Example:
   "cash_at_hand": 120000,
   "total_pipeline_value": 320000,
   "total_upcoming_expenses": 4700,
-  "average_project_health": "amber",
+  "health_green_count": 0,
+  "health_red_count": 0,
+  "health_amber_count": 1,
   "projects_at_risk": 0,
   "currency": "USD"
 }

@@ -23,13 +23,17 @@ class DashboardSummaryService
     /**
      * Get dashboard summary with key metrics
      * 
+     * Returns FACTS ONLY - no decision logic.
+     * 
      * @return array [
      *   'total_projects' => int,
      *   'active_projects' => int,
      *   'cash_at_hand' => float,
      *   'total_pipeline_value' => float,
      *   'total_upcoming_expenses' => float,
-     *   'average_project_health' => string (green|amber|red),
+     *   'health_green_count' => int,
+     *   'health_red_count' => int,
+     *   'health_amber_count' => int,
      *   'projects_at_risk' => int,
      *   'currency' => string
      * ]
@@ -86,20 +90,10 @@ class DashboardSummaryService
             }
         }
 
-        // Determine average health status
+        // Count health statuses - return FACTS ONLY, no decision logic
         $greenCount = count(array_filter($healthStatuses, fn($s) => $s === 'green'));
         $redCount = count(array_filter($healthStatuses, fn($s) => $s === 'red'));
         $amberCount = count(array_filter($healthStatuses, fn($s) => $s === 'amber'));
-
-        if (empty($healthStatuses)) {
-            $averageHealth = 'green'; // No active projects = all good
-        } elseif ($greenCount > $redCount && $greenCount > $amberCount) {
-            $averageHealth = 'green';
-        } elseif ($redCount > 0 && $redCount >= $amberCount) {
-            $averageHealth = 'red';
-        } else {
-            $averageHealth = 'amber';
-        }
 
         // Default currency
         $currency = 'USD';
@@ -110,7 +104,9 @@ class DashboardSummaryService
             'cash_at_hand' => round($cashAtHand, 2),
             'total_pipeline_value' => round($totalPipelineValue, 2),
             'total_upcoming_expenses' => round($totalUpcomingExpenses, 2),
-            'average_project_health' => $averageHealth,
+            'health_green_count' => $greenCount,
+            'health_red_count' => $redCount,
+            'health_amber_count' => $amberCount,
             'projects_at_risk' => $projectsAtRisk,
             'currency' => $currency,
         ];

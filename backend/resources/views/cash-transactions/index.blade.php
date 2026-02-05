@@ -1,288 +1,134 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cash Transactions - OPF-CD</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            min-height: 100vh;
-            padding: 40px 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .page-header {
-            background: rgba(255,255,255,0.95);
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .page-header h1 {
-            font-size: 32px;
-            color: #1f2937;
-            font-weight: 700;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
-        }
-
-        .card {
-            background: rgba(255,255,255,0.95);
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }
-
-        .card-body {
-            padding: 30px;
-        }
-
-        .filter-section {
-            margin-bottom: 24px;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .filter-section label {
-            font-weight: 600;
-            color: #374151;
-        }
-
-        .filter-section select {
-            padding: 8px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: inherit;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead {
-            background: #f9fafb;
-        }
-
-        th {
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            color: #374151;
-            font-size: 14px;
-            border-bottom: 2px solid #e5e7eb;
-        }
-
-        td {
-            padding: 16px 12px;
-            border-bottom: 1px solid #f3f4f6;
-            color: #1f2937;
-        }
-
-        tr:hover {
-            background: #f9fafb;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .badge-inflow {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .badge-outflow {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .badge-bank {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .badge-mobile {
-            background: #e9d5ff;
-            color: #6b21a8;
-        }
-
-        .badge-cash {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6b7280;
-        }
-
-        .empty-state h3 {
-            font-size: 20px;
-            margin-bottom: 12px;
-            color: #374151;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #6b7280;
-        }
-
-        .breadcrumb {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .breadcrumb a {
-            color: white;
-            text-decoration: none;
-            opacity: 0.8;
-            font-size: 14px;
-        }
-
-        .breadcrumb a:hover {
-            opacity: 1;
-            text-decoration: underline;
-        }
-
-        .breadcrumb span {
-            color: white;
-            opacity: 0.6;
-            margin: 0 8px;
-        }
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body x-data="transactionsIndex()" x-init="init()">
-    <div class="container">
-        <div class="breadcrumb">
-            <a href="/">Dashboard</a>
-            <span>→</span>
-            <span style="opacity: 1;">Cash Transactions</span>
-        </div>
-        <div class="page-header">
-            <h1>💰 Cash Transactions</h1>
-            <a href="/cash-transactions/create" class="btn btn-primary">+ Record Transaction</a>
+<body class="min-h-full bg-slate-950 text-gray-100">
+    <div class="min-h-screen p-8" x-data="transactionsIndex()">
+        <!-- Header -->
+        <div class="max-w-7xl mx-auto mb-8">
+            <!-- Breadcrumb -->
+            <div class="mb-4 text-sm text-gray-400">
+                <a href="/" class="hover:text-gray-200 transition-colors">Dashboard</a>
+                <span class="mx-2">→</span>
+                <span class="text-gray-200">Cash Transactions</span>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold">Cash Transactions</h1>
+                    <p class="text-gray-400 mt-1">Track cash inflows and outflows</p>
+                </div>
+                <a href="/cash-transactions/create" class="px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all">
+                    Record Transaction
+                </a>
+            </div>
         </div>
 
-        <div class="card">
-            <div class="card-body">
-                <div class="filter-section">
-                    <label for="account_filter">Filter by Account:</label>
-                    <select id="account_filter" x-model="filterAccountId" @change="fetchTransactions">
+        <!-- Loading State -->
+        <div x-show="loading" class="max-w-7xl mx-auto text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+            <p class="mt-4 text-gray-400">Loading transactions...</p>
+        </div>
+
+        <!-- Error State -->
+        <div x-show="error" class="max-w-7xl mx-auto">
+            <div class="rounded-xl bg-red-500/10 border border-red-500/30 p-6">
+                <p class="text-red-400" x-text="error"></p>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div x-show="!loading && !error" class="max-w-7xl mx-auto mb-6">
+            <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 p-6">
+                <div class="flex items-center gap-4">
+                    <label for="account_filter" class="text-sm font-medium text-gray-300">Filter by Account:</label>
+                    <select id="account_filter" 
+                            x-model="filterAccountId" 
+                            @change="fetchTransactions"
+                            class="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="">All Accounts</option>
                         <template x-for="account in accounts" :key="account.id">
                             <option :value="account.id" x-text="`${account.name} (${account.type.replace('_', ' ')})`"></option>
                         </template>
                     </select>
                 </div>
+            </div>
+        </div>
 
-                <div x-show="loading" class="loading">Loading transactions...</div>
-
-                <template x-if="!loading && transactions.length > 0">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Account</th>
-                                <th>Type</th>
-                                <th>Transaction Type</th>
-                                <th>Amount</th>
-                                <th>Source</th>
+        <!-- Transactions Table -->
+        <div x-show="!loading && !error" class="max-w-7xl mx-auto">
+            <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-white/5">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Account</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Transaction Type</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Source</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/10">
+                        <template x-for="transaction in transactions" :key="transaction.id">
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="text-gray-300" x-text="transaction.transaction_date"></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="font-medium" x-text="transaction.account_name"></div>
+                                    <span class="inline-block mt-1 px-2 py-1 text-xs rounded-full capitalize" 
+                                          :class="{
+                                              'bg-blue-500/20 text-blue-400': transaction.account_type === 'bank',
+                                              'bg-purple-500/20 text-purple-400': transaction.account_type === 'mobile_money',
+                                              'bg-green-500/20 text-green-400': transaction.account_type === 'cash'
+                                          }"
+                                          x-text="transaction.account_type.replace('_', ' ')">
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 text-xs rounded-full" 
+                                          :class="{
+                                              'bg-green-500/20 text-green-400': transaction.type === 'inflow',
+                                              'bg-red-500/20 text-red-400': transaction.type === 'outflow'
+                                          }"
+                                          x-text="transaction.type === 'inflow' ? 'Inflow' : 'Outflow'">
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-gray-300 uppercase text-sm" x-text="transaction.type"></span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-semibold text-indigo-400" x-text="formatCurrency(transaction.amount, transaction.currency)"></span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div x-text="formatSourceType(transaction.source_type)"></div>
+                                    <div class="text-xs text-gray-500 mt-1" x-text="'ID: ' + transaction.source_id"></div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <template x-for="transaction in transactions" :key="transaction.id">
-                                <tr>
-                                    <td x-text="transaction.transaction_date"></td>
-                                    <td>
-                                        <div x-text="transaction.account_name"></div>
-                                        <span 
-                                            class="badge"
-                                            :class="{
-                                                'badge-bank': transaction.account_type === 'bank',
-                                                'badge-mobile': transaction.account_type === 'mobile_money',
-                                                'badge-cash': transaction.account_type === 'cash'
-                                            }"
-                                            x-text="transaction.account_type.replace('_', ' ')"
-                                        ></span>
-                                    </td>
-                                    <td>
-                                        <span 
-                                            class="badge"
-                                            :class="{
-                                                'badge-inflow': transaction.type === 'inflow',
-                                                'badge-outflow': transaction.type === 'outflow'
-                                            }"
-                                            x-text="transaction.type === 'inflow' ? '💰 Inflow' : '💸 Outflow'"
-                                        ></span>
-                                    </td>
-                                    <td x-text="transaction.type.toUpperCase()"></td>
-                                    <td x-text="formatCurrency(transaction.amount, transaction.currency)"></td>
-                                    <td>
-                                        <div x-text="formatSourceType(transaction.source_type)"></div>
-                                        <div style="font-size: 12px; color: #6b7280;" x-text="'ID: ' + transaction.source_id"></div>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </template>
+                        </template>
+                    </tbody>
+                </table>
 
-                <template x-if="!loading && transactions.length === 0">
-                    <div class="empty-state">
-                        <h3>No Transactions Found</h3>
-                        <p>Record your first cash transaction to start tracking.</p>
-                        <a href="/cash-transactions/create" class="btn btn-primary" style="margin-top: 20px;">Record Transaction</a>
-                    </div>
-                </template>
+                <!-- Empty State -->
+                <div x-show="transactions.length === 0" class="text-center py-12">
+                    <p class="text-gray-400">No transactions found.</p>
+                    <a href="/cash-transactions/create" class="inline-block mt-4 px-4 py-2 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/30 transition-all">
+                        Record your first transaction
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -294,57 +140,80 @@
                 accounts: [],
                 filterAccountId: '',
                 loading: true,
+                error: null,
 
                 async init() {
-                    await Promise.all([
-                        this.fetchAccounts(),
-                        this.fetchTransactions()
-                    ]);
+                    await this.fetchAccounts();
+                    await this.fetchTransactions();
                 },
 
                 async fetchAccounts() {
                     try {
-                        const response = await fetch('/api/accounts');
+                        const response = await fetch('/api/accounts', {
+                            headers: {
+                                'Accept': 'application/json',
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch accounts');
+                        }
+
                         this.accounts = await response.json();
-                    } catch (error) {
-                        console.error('Error fetching accounts:', error);
+                    } catch (err) {
+                        console.error('Error fetching accounts:', err);
                     }
                 },
 
                 async fetchTransactions() {
-                    this.loading = true;
                     try {
-                        const url = this.filterAccountId 
-                            ? `/api/cash-transactions?account_id=${this.filterAccountId}`
-                            : '/api/cash-transactions';
-                        
-                        const response = await fetch(url);
+                        this.loading = true;
+                        this.error = null;
+
+                        let url = '/api/cash-transactions';
+                        if (this.filterAccountId) {
+                            url += `?account_id=${this.filterAccountId}`;
+                        }
+
+                        const response = await fetch(url, {
+                            headers: {
+                                'Accept': 'application/json',
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch transactions');
+                        }
+
                         this.transactions = await response.json();
-                    } catch (error) {
-                        console.error('Error fetching transactions:', error);
+                    } catch (err) {
+                        this.error = err.message;
                     } finally {
                         this.loading = false;
                     }
                 },
 
                 formatCurrency(value, currency) {
-                    return `${currency} ${parseFloat(value).toLocaleString()}`;
+                    return `${currency} ${parseFloat(value).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })}`;
                 },
 
                 formatSourceType(sourceType) {
-                    const labels = {
+                    const types = {
                         'project': 'Project',
                         'expense': 'Expense',
                         'milestone': 'Payment Milestone',
                         'opportunity': 'Opportunity',
                         'manual': 'Manual Entry',
-                        // Legacy values from before dropdown fix
+                        // Legacy values
                         'project_payment': 'Project Payment',
                         'client_invoice': 'Client Invoice'
                     };
-                    return labels[sourceType] || sourceType;
+                    return types[sourceType] || sourceType;
                 }
-            }
+            };
         }
     </script>
 </body>

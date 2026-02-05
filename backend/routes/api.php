@@ -161,12 +161,12 @@ Route::middleware(['check.permission:accounts,delete'])->group(function () {
 });
 
 // Cash Transactions management endpoints (protected)
-Route::middleware(['check.permission:transactions,view'])->group(function () {
+Route::middleware(['check.permission:cash_transactions,view'])->group(function () {
     Route::get('/cash-transactions', [CashTransactionController::class, 'apiIndex']);
     Route::get('/cash-transactions/{transactionId}', [CashTransactionController::class, 'apiShow']);
 });
 
-Route::middleware(['check.permission:transactions,create'])->group(function () {
+Route::middleware(['check.permission:cash_transactions,create'])->group(function () {
     Route::post('/cash-transactions', [CashTransactionController::class, 'store']);
 });
 

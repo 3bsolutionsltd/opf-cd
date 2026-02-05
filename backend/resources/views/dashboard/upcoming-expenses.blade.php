@@ -7,145 +7,94 @@ No service calls.
 --}}
 
 <!DOCTYPE html>
-<html>
+<html lang="en" class="h-full">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Upcoming Expenses - OPF-CD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: #f7fafc;
-            padding: 20px;
-        }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        h1 { font-size: 2rem; color: #2d3748; margin-bottom: 10px; }
-        .breadcrumb { color: #718096; font-size: 0.9rem; }
-        .breadcrumb a { color: #667eea; text-decoration: none; }
-        .loading {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-            color: #718096;
-        }
-        .expenses-list {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        .expense-item {
-            padding: 25px 30px;
-            border-bottom: 1px solid #e2e8f0;
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 20px;
-            align-items: center;
-        }
-        .expense-item:last-child { border-bottom: none; }
-        .expense-info h3 {
-            font-size: 1.1rem;
-            color: #2d3748;
-            margin-bottom: 8px;
-        }
-        .expense-meta {
-            display: flex;
-            gap: 15px;
-            font-size: 0.85rem;
-            color: #718096;
-        }
-        .expense-meta span {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .expense-amount {
-            text-align: right;
-        }
-        .amount-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #2d3748;
-            margin-bottom: 5px;
-        }
-        .currency {
-            font-size: 0.85rem;
-            color: #718096;
-        }
-        .category-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: #edf2f7;
-            color: #4a5568;
-        }
-        .type-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .type-recurring { background: #c6f6d5; color: #22543d; }
-        .type-oneoff { background: #fed7d7; color: #742a2a; }
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body>
-<div class="container">
-    <div class="header">
-        <div class="breadcrumb"><a href="/">← Back to Dashboard</a></div>
-        <h1>Upcoming Expenses</h1>
-    </div>
-
-    <div x-data="{
-        expenses: [],
+<body class="min-h-full bg-slate-950 text-gray-100">
+    <div class="min-h-screen p-8" x-data="{
+        expenses: null,
         loading: true
     }" x-init="
-        fetch('/api/finance/expenses/upcoming')
-            .then(response => response.json())
-            .then(data => {
-                expenses = data;
-                loading = false;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                loading = false;
-            });
+        fetch('/api/finance/expenses/upcoming', {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            expenses = data;
+            loading = false;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            loading = false;
+        });
     ">
-        <div x-show="loading" class="loading">Loading expenses...</div>
-        
-        <div x-show="!loading" class="expenses-list">
-            <template x-for="expense in expenses" :key="expense.expense_id">
-                <div class="expense-item">
-                    <div class="expense-info">
-                        <h3 x-text="expense.name"></h3>
-                        <div class="expense-meta">
-                            <span class="category-badge" x-text="expense.category"></span>
-                            <span class="type-badge" :class="expense.type === 'recurring' ? 'type-recurring' : 'type-oneoff'" x-text="expense.type"></span>
-                            <span>📅 <span x-text="expense.due_date"></span></span>
-                            <span>📍 <span x-text="expense.source"></span></span>
-                        </div>
-                    </div>
-                    <div class="expense-amount">
-                        <div class="amount-value" x-text="expense.amount"></div>
-                        <div class="currency" x-text="expense.currency"></div>
-                    </div>
+        <!-- Header -->
+        <div class="max-w-4xl mx-auto mb-8">
+            <div class="mb-4 text-sm text-gray-400">
+                <a href="/" class="hover:text-gray-200 transition-colors">Home</a>
+                <span class="mx-2">→</span>
+                <a href="/dashboard" class="hover:text-gray-200 transition-colors">Dashboard</a>
+                <span class="mx-2">→</span>
+                <span class="text-gray-200">Upcoming Expenses</span>
+            </div>
+
+            <h1 class="text-4xl font-bold">💳 Upcoming Expenses</h1>
+            <p class="text-gray-400 mt-2">Next 30 days expense forecast</p>
+        </div>
+
+        <!-- Loading State -->
+        <div x-show="loading" class="max-w-4xl mx-auto text-center py-20">
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-red-500"></div>
+            <p class="mt-4 text-gray-400">Loading expenses...</p>
+        </div>
+
+        <!-- Content -->
+        <div x-show="!loading && expenses" class="max-w-4xl mx-auto space-y-6">
+            <!-- Summary -->
+            <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 p-12 text-center">
+                <div class="text-8xl font-black text-red-400 mb-4">
+                    <span x-text="expenses.expenses?.length || 0"></span>
                 </div>
-            </template>
+                <div class="text-2xl text-gray-300 mb-8">Pending Expenses</div>
+                
+                <div class="text-5xl font-bold text-gray-200 mb-2">
+                    <span x-text="expenses.total_amount?.toLocaleString()"></span> <span x-text="expenses.currency"></span>
+                </div>
+                <div class="text-gray-400">Total Amount Due</div>
+            </div>
+
+            <!-- Expense List -->
+            <div x-show="expenses.expenses && expenses.expenses.length > 0" class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 p-6">
+                <h3 class="text-lg font-semibold mb-4">Expense Breakdown</h3>
+                <div class="space-y-3">
+                    <template x-for="expense in expenses.expenses" :key="expense.id">
+                        <div class="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-all">
+                            <div>
+                                <div class="font-medium" x-text="expense.description"></div>
+                                <div class="text-sm text-gray-400" x-text="expense.due_date"></div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-bold text-red-400">
+                                    <span x-text="expense.amount?.toLocaleString()"></span> <span x-text="expense.currency"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 </body>
 </html>

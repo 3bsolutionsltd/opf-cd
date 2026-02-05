@@ -7,174 +7,85 @@ No service calls.
 --}}
 
 <!DOCTYPE html>
-<html>
+<html lang="en" class="h-full">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Project Health - OPF-CD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: #f7fafc;
-            padding: 20px;
-        }
-        .container { max-width: 900px; margin: 0 auto; }
-        .header {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        h1 { font-size: 2rem; color: #2d3748; margin-bottom: 10px; }
-        .breadcrumb { color: #718096; font-size: 0.9rem; }
-        .breadcrumb a { color: #667eea; text-decoration: none; }
-        .loading {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-            color: #718096;
-        }
-        .health-card {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
-        }
-        .status-green { background: #48bb78; color: white; }
-        .status-amber { background: #ed8936; color: white; }
-        .status-red { background: #f56565; color: white; }
-        .score-display {
-            text-align: center;
-            padding: 30px 0;
-        }
-        .score-value {
-            font-size: 4rem;
-            font-weight: 700;
-            color: #667eea;
-        }
-        .score-label {
-            font-size: 1.1rem;
-            color: #718096;
-            margin-top: 10px;
-        }
-        .signals-section {
-            background: #f7fafc;
-            padding: 25px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        .signals-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 15px;
-        }
-        .signals-content {
-            color: #4a5568;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-        }
-        .reasons-list {
-            list-style: none;
-        }
-        .reasons-list li {
-            padding: 12px 0;
-            border-bottom: 1px solid #e2e8f0;
-            color: #4a5568;
-        }
-        .reasons-list li:last-child { border-bottom: none; }
-        .reasons-list li:before {
-            content: '•';
-            color: #667eea;
-            font-weight: bold;
-            display: inline-block;
-            width: 1em;
-            margin-left: -1em;
-            margin-right: 0.5em;
-        }
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body>
-<div class="container">
-    <div class="header">
-        <div class="breadcrumb"><a href="/">← Back to Dashboard</a></div>
-        <h1>Project Health Index</h1>
-    </div>
-
-    <div x-data="{
-        project_id: null,
-        health_status: null,
-        score: null,
-        signals: null,
-        reasons: [],
+<body class="min-h-full bg-slate-950 text-gray-100">
+    <div class="min-h-screen p-8" x-data="{
+        health: null,
         projectId: {{ $projectId }},
         loading: true
     }" x-init="
-        fetch(`/api/projects/${projectId}/health`)
-            .then(response => response.json())
-            .then(data => {
-                project_id = data.project_id;
-                health_status = data.health_status;
-                score = data.score;
-                signals = data.signals;
-                reasons = data.reasons;
-                loading = false;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                loading = false;
-            });
+        fetch(`/api/projects/${projectId}/health`, {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            health = data;
+            loading = false;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            loading = false;
+        });
     ">
-        <div x-show="loading" class="loading">Loading health data...</div>
-        
-        <div x-show="!loading">
-            <div class="health-card">
-                <div class="score-display">
-                    <div class="score-value" x-text="score"></div>
-                    <div class="score-label">Health Score</div>
+        <!-- Header -->
+        <div class="max-w-4xl mx-auto mb-8">
+            <div class="mb-4 text-sm text-gray-400">
+                <a href="/" class="hover:text-gray-200 transition-colors">Home</a>
+                <span class="mx-2">→</span>
+                <a href="/dashboard" class="hover:text-gray-200 transition-colors">Dashboard</a>
+                <span class="mx-2">→</span>
+                <span class="text-gray-200">Project Health</span>
+            </div>
+
+            <h1 class="text-4xl font-bold">🏥 Project Health</h1>
+            <p class="text-gray-400 mt-2">Overall project status and risk assessment</p>
+        </div>
+
+        <!-- Loading State -->
+        <div x-show="loading" class="max-w-4xl mx-auto text-center py-20">
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-green-500"></div>
+            <p class="mt-4 text-gray-400">Loading health data...</p>
+        </div>
+
+        <!-- Content -->
+        <div x-show="!loading && health" class="max-w-4xl mx-auto">
+            <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 p-12 text-center">
+                <div class="text-9xl mb-6"
+                     :class="{
+                         'text-green-400': health.status === 'healthy',
+                         'text-yellow-400': health.status === 'at-risk',
+                         'text-red-400': health.status === 'critical'
+                     }">
+                    <span x-show="health.status === 'healthy'">✓</span>
+                    <span x-show="health.status === 'at-risk'">⚠</span>
+                    <span x-show="health.status === 'critical'">✗</span>
                 </div>
                 
-                <div style="text-align: center; margin: 20px 0;">
-                    <span class="status-badge" 
-                          :class="{
-                              'status-green': health_status === 'green',
-                              'status-amber': health_status === 'amber',
-                              'status-red': health_status === 'red'
-                          }"
-                          x-text="health_status"></span>
-                </div>
+                <div class="text-3xl font-bold mb-4 capitalize"
+                     :class="{
+                         'text-green-300': health.status === 'healthy',
+                         'text-yellow-300': health.status === 'at-risk',
+                         'text-red-300': health.status === 'critical'
+                     }"
+                     x-text="health.status?.replace('-', ' ')"></div>
                 
-                <div class="signals-section">
-                    <div class="signals-title">Signals</div>
-                    <div class="signals-content" x-text="JSON.stringify(signals, null, 2)"></div>
-                </div>
-                
-                <div class="signals-section">
-                    <div class="signals-title">Reasons</div>
-                    <ul class="reasons-list">
-                        <template x-for="reason in reasons" :key="reason">
-                            <li x-text="reason"></li>
-                        </template>
-                    </ul>
-                </div>
+                <div class="text-gray-400 text-lg">Current Project Status</div>
             </div>
         </div>
     </div>
-</div>
 </body>
 </html>

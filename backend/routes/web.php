@@ -16,19 +16,36 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout']);
 
+// Landing page (public)
+Route::get('/', function () {
+    return view('welcome');
+});
+
 // Dashboard routes (protected)
 Route::middleware(['check.permission:dashboards,view'])->group(function () {
-    Route::get('/', function () {
+    Route::get('/dashboard', function () {
         return view('dashboard.index');
     });
 
     Route::prefix('dashboard')->group(function () {
-        Route::get('/project-progress/{id}', [DashboardController::class, 'projectProgress']);
-        Route::get('/payment-gap/{id}', [DashboardController::class, 'paymentGap']);
-        Route::get('/project-health/{id}', [DashboardController::class, 'projectHealth']);
-        Route::get('/cash-flow', [DashboardController::class, 'cashFlow']);
-        Route::get('/upcoming-expenses', [DashboardController::class, 'upcomingExpenses']);
-        Route::get('/sales-pipeline', [DashboardController::class, 'salesPipeline']);
+        Route::get('/project-progress/{id}', function ($id) {
+            return view('dashboard.project-progress', ['projectId' => $id]);
+        });
+        Route::get('/payment-gap/{id}', function ($id) {
+            return view('dashboard.payment-gap', ['projectId' => $id]);
+        });
+        Route::get('/project-health/{id}', function ($id) {
+            return view('dashboard.project-health', ['projectId' => $id]);
+        });
+        Route::get('/cash-flow', function () {
+            return view('dashboard.cash-flow');
+        });
+        Route::get('/upcoming-expenses', function () {
+            return view('dashboard.upcoming-expenses');
+        });
+        Route::get('/sales-pipeline', function () {
+            return view('dashboard.sales-pipeline');
+        });
     });
 });
 

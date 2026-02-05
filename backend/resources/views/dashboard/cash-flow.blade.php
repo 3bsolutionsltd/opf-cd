@@ -7,153 +7,93 @@ No service calls.
 --}}
 
 <!DOCTYPE html>
-<html>
+<html lang="en" class="h-full">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cash Flow - OPF-CD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: #f7fafc;
-            padding: 20px;
-        }
-        .container { max-width: 1100px; margin: 0 auto; }
-        .header {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        h1 { font-size: 2rem; color: #2d3748; margin-bottom: 10px; }
-        .breadcrumb { color: #718096; font-size: 0.9rem; }
-        .breadcrumb a { color: #667eea; text-decoration: none; }
-        .loading {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-            color: #718096;
-        }
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-        }
-        .metric-card {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .metric-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-        }
-        .icon-green { background: #c6f6d5; }
-        .icon-blue { background: #bee3f8; }
-        .icon-red { background: #fed7d7; }
-        .icon-purple { background: #e9d8fd; }
-        .metric-label {
-            font-size: 0.9rem;
-            color: #718096;
-            margin-bottom: 8px;
-        }
-        .metric-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #2d3748;
-        }
-        .highlight-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .highlight-card .metric-label { color: rgba(255,255,255,0.9); }
-        .highlight-card .metric-value { color: white; }
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body>
-<div class="container">
-    <div class="header">
-        <div class="breadcrumb"><a href="/">← Back to Dashboard</a></div>
-        <h1>Cash Flow Analysis</h1>
-    </div>
-
-    <div x-data="{
-        cash_at_hand: null,
-        total_inflows: null,
-        total_outflows: null,
-        net_cash_flow: null,
-        average_monthly_burn: null,
-        cash_runway_months: null,
+<body class="min-h-full bg-slate-950 text-gray-100">
+    <div class="min-h-screen p-8" x-data="{
+        cashFlow: null,
         loading: true
     }" x-init="
-        fetch('/api/finance/cash-flow')
-            .then(response => response.json())
-            .then(data => {
-                cash_at_hand = data.cash_at_hand;
-                total_inflows = data.total_inflows;
-                total_outflows = data.total_outflows;
-                net_cash_flow = data.net_cash_flow;
-                average_monthly_burn = data.average_monthly_burn;
-                cash_runway_months = data.cash_runway_months;
-                loading = false;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                loading = false;
-            });
+        fetch('/api/finance/cash-flow', {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            cashFlow = data;
+            loading = false;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            loading = false;
+        });
     ">
-        <div x-show="loading" class="loading">Loading cash flow data...</div>
-        
-        <div x-show="!loading" class="metrics-grid">
-            <div class="metric-card highlight-card">
-                <div class="metric-icon icon-green">💵</div>
-                <div class="metric-label">Cash at Hand</div>
-                <div class="metric-value" x-text="cash_at_hand"></div>
+        <!-- Header -->
+        <div class="max-w-4xl mx-auto mb-8">
+            <div class="mb-4 text-sm text-gray-400">
+                <a href="/" class="hover:text-gray-200 transition-colors">Home</a>
+                <span class="mx-2">→</span>
+                <a href="/dashboard" class="hover:text-gray-200 transition-colors">Dashboard</a>
+                <span class="mx-2">→</span>
+                <span class="text-gray-200">Cash Flow</span>
             </div>
-            
-            <div class="metric-card">
-                <div class="metric-icon icon-blue">⬆️</div>
-                <div class="metric-label">Total Inflows</div>
-                <div class="metric-value" x-text="total_inflows"></div>
+
+            <h1 class="text-4xl font-bold">💸 Cash Flow</h1>
+            <p class="text-gray-400 mt-2">Inflows and outflows tracking</p>
+        </div>
+
+        <!-- Loading State -->
+        <div x-show="loading" class="max-w-4xl mx-auto text-center py-20">
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
+            <p class="mt-4 text-gray-400">Loading cash flow data...</p>
+        </div>
+
+        <!-- Content -->
+        <div x-show="!loading && cashFlow" class="max-w-4xl mx-auto space-y-6">
+            <!-- Net Flow -->
+            <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 p-12 text-center">
+                <div class="text-sm text-gray-400 mb-2">Net Cash Flow</div>
+                <div class="text-7xl font-black mb-4"
+                     :class="cashFlow.net_flow >= 0 ? 'text-green-400' : 'text-red-400'">
+                    <span x-text="cashFlow.net_flow?.toLocaleString()"></span>
+                </div>
+                <div class="text-xl text-gray-300">
+                    <span x-show="cashFlow.net_flow >= 0" class="text-green-300">Positive Cash Flow</span>
+                    <span x-show="cashFlow.net_flow < 0" class="text-red-300">Negative Cash Flow</span>
+                </div>
             </div>
-            
-            <div class="metric-card">
-                <div class="metric-icon icon-red">⬇️</div>
-                <div class="metric-label">Total Outflows</div>
-                <div class="metric-value" x-text="total_outflows"></div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-icon icon-purple">📊</div>
-                <div class="metric-label">Net Cash Flow</div>
-                <div class="metric-value" x-text="net_cash_flow"></div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-icon icon-red">🔥</div>
-                <div class="metric-label">Avg Monthly Burn</div>
-                <div class="metric-value" x-text="average_monthly_burn"></div>
-            </div>
-            
-            <div class="metric-card highlight-card">
-                <div class="metric-icon icon-green">⏱️</div>
-                <div class="metric-label">Cash Runway (Months)</div>
-                <div class="metric-value" x-text="cash_runway_months"></div>
+
+            <!-- Breakdown -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-green-500/20 p-8">
+                    <div class="text-sm text-gray-400 mb-2">Total Inflows</div>
+                    <div class="text-5xl font-bold text-green-400 mb-2">
+                        <span x-text="cashFlow.total_inflow?.toLocaleString()"></span>
+                    </div>
+                    <div class="text-gray-400">Money received</div>
+                </div>
+
+                <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-red-500/20 p-8">
+                    <div class="text-sm text-gray-400 mb-2">Total Outflows</div>
+                    <div class="text-5xl font-bold text-red-400 mb-2">
+                        <span x-text="cashFlow.total_outflow?.toLocaleString()"></span>
+                    </div>
+                    <div class="text-gray-400">Money spent</div>
+                </div>
             </div>
         </div>
     </div>
-</div>
 </body>
 </html>

@@ -7,141 +7,95 @@ No service calls.
 --}}
 
 <!DOCTYPE html>
-<html>
+<html lang="en" class="h-full">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Payment Gap - OPF-CD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: #f7fafc;
-            padding: 20px;
-        }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .header {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        h1 { font-size: 2rem; color: #2d3748; margin-bottom: 10px; }
-        .breadcrumb { color: #718096; font-size: 0.9rem; }
-        .breadcrumb a { color: #667eea; text-decoration: none; }
-        .loading {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-            color: #718096;
-        }
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .metric-card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .metric-label {
-            font-size: 0.85rem;
-            color: #718096;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-        .metric-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #2d3748;
-        }
-        .gap-highlight {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .gap-highlight .metric-label { color: rgba(255,255,255,0.9); }
-        .gap-highlight .metric-value { color: white; }
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body>
-<div class="container">
-    <div class="header">
-        <div class="breadcrumb"><a href="/">← Back to Dashboard</a></div>
-        <h1>Payment Gap Analysis</h1>
-    </div>
-
-    <div x-data="{
-        gap_amount: null,
-        gap_percentage: null,
-        progress: null,
-        earned_value: null,
-        received_value: null,
-        contract_value: null,
+<body class="min-h-full bg-slate-950 text-gray-100">
+    <div class="min-h-screen p-8" x-data="{
+        paymentGap: null,
         projectId: {{ $projectId }},
         loading: true
     }" x-init="
-        fetch(`/api/projects/${projectId}/payment-gap`)
-            .then(response => response.json())
-            .then(data => {
-                gap_amount = data.gap_amount;
-                gap_percentage = data.gap_percentage;
-                progress = data.progress;
-                earned_value = data.earned_value;
-                received_value = data.received_value;
-                contract_value = data.contract_value;
-                loading = false;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                loading = false;
-            });
+        fetch(`/api/projects/${projectId}/payment-gap`, {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            paymentGap = data;
+            loading = false;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            loading = false;
+        });
     ">
-        <div x-show="loading" class="loading">Loading payment data...</div>
-        
-        <div x-show="!loading">
-            <div class="metrics-grid">
-                <div class="metric-card gap-highlight">
-                    <div class="metric-label">Gap Amount</div>
-                    <div class="metric-value" x-text="gap_amount"></div>
-                </div>
-                
-                <div class="metric-card gap-highlight">
-                    <div class="metric-label">Gap Percentage</div>
-                    <div class="metric-value" x-text="gap_percentage + '%'"></div>
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-label">Progress</div>
-                    <div class="metric-value" x-text="progress + '%'"></div>
-                </div>
+        <!-- Header -->
+        <div class="max-w-4xl mx-auto mb-8">
+            <div class="mb-4 text-sm text-gray-400">
+                <a href="/" class="hover:text-gray-200 transition-colors">Home</a>
+                <span class="mx-2">→</span>
+                <a href="/dashboard" class="hover:text-gray-200 transition-colors">Dashboard</a>
+                <span class="mx-2">→</span>
+                <span class="text-gray-200">Payment Gap</span>
             </div>
-            
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-label">Earned Value</div>
-                    <div class="metric-value" x-text="earned_value"></div>
+
+            <h1 class="text-4xl font-bold">💰 Payment Gap</h1>
+            <p class="text-gray-400 mt-2">Work delivered vs payments received</p>
+        </div>
+
+        <!-- Loading State -->
+        <div x-show="loading" class="max-w-4xl mx-auto text-center py-20">
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500"></div>
+            <p class="mt-4 text-gray-400">Loading payment data...</p>
+        </div>
+
+        <!-- Content -->
+        <div x-show="!loading && paymentGap" class="max-w-4xl mx-auto">
+            <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 p-12 text-center">
+                <div class="text-7xl font-black mb-4"
+                     :class="{
+                         'text-green-400': paymentGap.gap > 0,
+                         'text-red-400': paymentGap.gap < 0,
+                         'text-blue-400': paymentGap.gap === 0
+                     }">
+                    <span x-text="paymentGap.currency"></span> <span x-text="Math.abs(paymentGap.gap).toLocaleString()"></span>
                 </div>
                 
-                <div class="metric-card">
-                    <div class="metric-label">Received Value</div>
-                    <div class="metric-value" x-text="received_value"></div>
+                <div class="text-2xl mb-12"
+                     :class="{
+                         'text-green-300': paymentGap.gap > 0,
+                         'text-red-300': paymentGap.gap < 0,
+                         'text-blue-300': paymentGap.gap === 0
+                     }">
+                    <span x-show="paymentGap.gap > 0">✓ Payment ahead of work</span>
+                    <span x-show="paymentGap.gap < 0">⚠ Work ahead of payment</span>
+                    <span x-show="paymentGap.gap === 0">= Perfectly balanced</span>
                 </div>
-                
-                <div class="metric-card">
-                    <div class="metric-label">Contract Value</div>
-                    <div class="metric-value" x-text="contract_value"></div>
+
+                <div class="grid grid-cols-2 gap-8 max-w-2xl mx-auto">
+                    <div class="rounded-lg bg-white/5 p-6">
+                        <div class="text-sm text-gray-400 mb-2">Work Delivered</div>
+                        <div class="text-3xl font-bold" x-text="paymentGap.work_delivered?.toLocaleString()"></div>
+                    </div>
+                    <div class="rounded-lg bg-white/5 p-6">
+                        <div class="text-sm text-gray-400 mb-2">Payments Received</div>
+                        <div class="text-3xl font-bold" x-text="paymentGap.payments_received?.toLocaleString()"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 </body>
 </html>

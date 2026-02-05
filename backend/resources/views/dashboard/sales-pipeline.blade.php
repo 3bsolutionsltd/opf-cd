@@ -7,187 +7,99 @@ No service calls.
 --}}
 
 <!DOCTYPE html>
-<html>
+<html lang="en" class="h-full">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Sales Pipeline - OPF-CD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: #f7fafc;
-            padding: 20px;
-        }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        h1 { font-size: 2rem; color: #2d3748; margin-bottom: 10px; }
-        .breadcrumb { color: #718096; font-size: 0.9rem; }
-        .breadcrumb a { color: #667eea; text-decoration: none; }
-        .loading {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-            color: #718096;
-        }
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .summary-card {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .summary-label {
-            font-size: 0.85rem;
-            color: #718096;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
-        }
-        .summary-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #2d3748;
-        }
-        .highlight {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .highlight .summary-label { color: rgba(255,255,255,0.9); }
-        .highlight .summary-value { color: white; }
-        .stages-section {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 30px;
-        }
-        .stages-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 25px;
-        }
-        .stage-card {
-            background: #f7fafc;
-            padding: 25px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            border-left: 5px solid #667eea;
-        }
-        .stage-card:last-child { margin-bottom: 0; }
-        .stage-name {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 15px;
-        }
-        .stage-metrics {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-        }
-        .stage-metric {
-            text-align: center;
-        }
-        .stage-metric-label {
-            font-size: 0.75rem;
-            color: #718096;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-        .stage-metric-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #2d3748;
-        }
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body>
-<div class="container">
-    <div class="header">
-        <div class="breadcrumb"><a href="/">← Back to Dashboard</a></div>
-        <h1>Sales Pipeline Forecast</h1>
-    </div>
-
-    <div x-data="{
-        total_pipeline_value: null,
-        weighted_pipeline_value: null,
-        opportunity_count: null,
-        by_stage: [],
+<body class="min-h-full bg-slate-950 text-gray-100">
+    <div class="min-h-screen p-8" x-data="{
+        pipeline: null,
         loading: true
     }" x-init="
-        fetch('/api/sales/pipeline')
-            .then(response => response.json())
-            .then(data => {
-                total_pipeline_value = data.total_pipeline_value;
-                weighted_pipeline_value = data.weighted_pipeline_value;
-                opportunity_count = data.opportunity_count;
-                by_stage = data.by_stage;
-                loading = false;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                loading = false;
-            });
+        fetch('/api/sales/pipeline', {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            pipeline = data;
+            loading = false;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            loading = false;
+        });
     ">
-        <div x-show="loading" class="loading">Loading pipeline data...</div>
-        
-        <div x-show="!loading">
-            <div class="summary-grid">
-                <div class="summary-card">
-                    <div class="summary-label">Total Pipeline Value</div>
-                    <div class="summary-value" x-text="total_pipeline_value"></div>
-                </div>
-                
-                <div class="summary-card highlight">
-                    <div class="summary-label">Weighted Pipeline</div>
-                    <div class="summary-value" x-text="weighted_pipeline_value"></div>
-                </div>
-                
-                <div class="summary-card">
-                    <div class="summary-label">Opportunities</div>
-                    <div class="summary-value" x-text="opportunity_count"></div>
-                </div>
+        <!-- Header -->
+        <div class="max-w-4xl mx-auto mb-8">
+            <div class="mb-4 text-sm text-gray-400">
+                <a href="/" class="hover:text-gray-200 transition-colors">Home</a>
+                <span class="mx-2">→</span>
+                <a href="/dashboard" class="hover:text-gray-200 transition-colors">Dashboard</a>
+                <span class="mx-2">→</span>
+                <span class="text-gray-200">Sales Pipeline</span>
             </div>
-            
-            <div class="stages-section">
-                <div class="stages-title">Pipeline by Stage</div>
-                <template x-for="stage in by_stage" :key="stage.stage">
-                    <div class="stage-card">
-                        <div class="stage-name" x-text="stage.stage"></div>
-                        <div class="stage-metrics">
-                            <div class="stage-metric">
-                                <div class="stage-metric-label">Count</div>
-                                <div class="stage-metric-value" x-text="stage.count"></div>
+
+            <h1 class="text-4xl font-bold">🎯 Sales Pipeline</h1>
+            <p class="text-gray-400 mt-2">Opportunity funnel and revenue forecast</p>
+        </div>
+
+        <!-- Loading State -->
+        <div x-show="loading" class="max-w-4xl mx-auto text-center py-20">
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-purple-500"></div>
+            <p class="mt-4 text-gray-400">Loading pipeline...</p>
+        </div>
+
+        <!-- Content -->
+        <div x-show="!loading && pipeline" class="max-w-4xl mx-auto space-y-6">
+            <!-- Summary -->
+            <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 p-12 text-center">
+                <div class="text-8xl font-black text-purple-400 mb-4">
+                    <span x-text="pipeline.opportunities?.length || 0"></span>
+                </div>
+                <div class="text-2xl text-gray-300 mb-8">Active Opportunities</div>
+                
+                <div class="text-5xl font-bold text-gray-200 mb-2">
+                    <span x-text="pipeline.total_value?.toLocaleString()"></span>
+                </div>
+                <div class="text-gray-400">Total Pipeline Value</div>
+            </div>
+
+            <!-- Opportunity List -->
+            <div x-show="pipeline.opportunities && pipeline.opportunities.length > 0" class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 p-6">
+                <h3 class="text-lg font-semibold mb-4">Pipeline Breakdown</h3>
+                <div class="space-y-3">
+                    <template x-for="opportunity in pipeline.opportunities" :key="opportunity.id">
+                        <div class="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-all">
+                            <div>
+                                <div class="font-medium" x-text="opportunity.client"></div>
+                                <div class="text-sm text-gray-400" x-text="opportunity.description"></div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    <span class="capitalize" x-text="opportunity.stage"></span> • 
+                                    <span x-text="opportunity.probability"></span>% probability
+                                </div>
                             </div>
-                            <div class="stage-metric">
-                                <div class="stage-metric-label">Total Value</div>
-                                <div class="stage-metric-value" x-text="stage.total_value"></div>
-                            </div>
-                            <div class="stage-metric">
-                                <div class="stage-metric-label">Weighted Value</div>
-                                <div class="stage-metric-value" x-text="stage.weighted_value"></div>
+                            <div class="text-right">
+                                <div class="font-bold text-purple-400">
+                                    <span x-text="opportunity.value?.toLocaleString()"></span>
+                                </div>
+                                <div class="text-sm text-gray-400" x-text="opportunity.currency"></div>
                             </div>
                         </div>
-                    </div>
-                </template>
+                    </template>
+                </div>
             </div>
         </div>
     </div>
-</div>
 </body>
 </html>

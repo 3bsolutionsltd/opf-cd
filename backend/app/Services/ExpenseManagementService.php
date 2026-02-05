@@ -256,6 +256,7 @@ class ExpenseManagementService
 
         foreach ($expenses as $expense) {
             $currency = $expense->currency;
+            $status = $expense->status;
             
             if (!isset($currencies[$currency])) {
                 $currencies[$currency] = [
@@ -267,7 +268,12 @@ class ExpenseManagementService
             }
 
             $amount = (float) $expense->total;
-            $currencies[$currency][$expense->status] = $amount;
+            
+            // Only add to status totals if it's a valid status
+            if (in_array($status, ['due', 'paid', 'overdue'])) {
+                $currencies[$currency][$status] = $amount;
+            }
+            
             $currencies[$currency]['total'] += $amount;
         }
 

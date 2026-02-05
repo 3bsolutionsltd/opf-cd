@@ -45,13 +45,35 @@ No service calls.
                     <select id="projectFilter" 
                             x-model="selectedProject" 
                             @change="loadDashboards()"
-                            class="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors min-w-[250px]">
-                        <option value="">All Projects</option>
+                            class="px-4 py-2 rounded-lg bg-slate-800 border border-white/10 text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors min-w-[250px]">
+                        <option value="" class="bg-slate-800 text-gray-100">All Projects</option>
                         <template x-for="project in projects" :key="project.id">
-                            <option :value="project.id" x-text="`${project.name} (${project.client})`"></option>
+                            <option :value="project.id" x-text="`${project.name} (${project.client})`" class="bg-slate-800 text-gray-100"></option>
                         </template>
                     </select>
                 </div>
+            </div>
+        </div>
+
+        <!-- Quick Links (Moved to Top) -->
+        <div class="max-w-7xl mx-auto mb-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <a href="/projects" class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4 hover:border-indigo-500/30 hover:bg-white/10 transition-all text-center">
+                    <div class="text-2xl mb-2">📁</div>
+                    <div class="text-sm font-medium">Projects</div>
+                </a>
+                <a href="/opportunities" class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4 hover:border-green-500/30 hover:bg-white/10 transition-all text-center">
+                    <div class="text-2xl mb-2">🎯</div>
+                    <div class="text-sm font-medium">Opportunities</div>
+                </a>
+                <a href="/accounts" class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4 hover:border-purple-500/30 hover:bg-white/10 transition-all text-center">
+                    <div class="text-2xl mb-2">🏦</div>
+                    <div class="text-sm font-medium">Accounts</div>
+                </a>
+                <a href="/cash-transactions" class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4 hover:border-blue-500/30 hover:bg-white/10 transition-all text-center">
+                    <div class="text-2xl mb-2">💸</div>
+                    <div class="text-sm font-medium">Transactions</div>
+                </a>
             </div>
         </div>
 
@@ -143,7 +165,7 @@ No service calls.
                     Loading...
                 </div>
                 
-                <div x-show="!loading.health && selectedProject" class="text-center py-8">
+                <div x-show="!loading.health && selectedProject && dashboards.health.status" class="text-center py-8">
                     <div class="text-6xl font-bold mb-2"
                          :class="{
                              'text-green-400': dashboards.health.status === 'healthy',
@@ -154,7 +176,7 @@ No service calls.
                         <span x-show="dashboards.health.status === 'at-risk'">⚠</span>
                         <span x-show="dashboards.health.status === 'critical'">✗</span>
                     </div>
-                    <div class="text-gray-400 capitalize" x-text="dashboards.health.status.replace('-', ' ')"></div>
+                    <div class="text-gray-400 capitalize" x-text="dashboards.health.status ? dashboards.health.status.replace('-', ' ') : ''"></div>
                 </div>
                 
                 <div x-show="!loading.health && !selectedProject" class="text-center py-12 text-gray-400">
@@ -264,29 +286,6 @@ No service calls.
                         <div class="text-sm text-gray-400">Total Pipeline Value</div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Quick Links -->
-        <div class="max-w-7xl mx-auto mt-12">
-            <h2 class="text-2xl font-bold mb-6">Quick Links</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <a href="/projects" class="rounded-lg bg-white/5 border border-white/10 p-4 hover:bg-white/10 transition-all text-center">
-                    <div class="text-2xl mb-2">📁</div>
-                    <div class="font-medium">Projects</div>
-                </a>
-                <a href="/opportunities" class="rounded-lg bg-white/5 border border-white/10 p-4 hover:bg-white/10 transition-all text-center">
-                    <div class="text-2xl mb-2">🎯</div>
-                    <div class="font-medium">Opportunities</div>
-                </a>
-                <a href="/accounts" class="rounded-lg bg-white/5 border border-white/10 p-4 hover:bg-white/10 transition-all text-center">
-                    <div class="text-2xl mb-2">🏦</div>
-                    <div class="font-medium">Accounts</div>
-                </a>
-                <a href="/cash-transactions" class="rounded-lg bg-white/5 border border-white/10 p-4 hover:bg-white/10 transition-all text-center">
-                    <div class="text-2xl mb-2">💸</div>
-                    <div class="font-medium">Transactions</div>
-                </a>
             </div>
         </div>
     </div>

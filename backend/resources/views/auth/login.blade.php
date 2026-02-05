@@ -129,7 +129,7 @@
                         const data = await response.json();
 
                         if (data.success) {
-                            window.location.href = '/';
+                            window.location.href = '/dashboard';
                         } else {
                             this.errorMessage = data.message || 'Login failed. Please try again.';
                         }

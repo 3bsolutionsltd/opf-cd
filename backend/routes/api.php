@@ -11,6 +11,8 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\OpportunityController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\CashTransactionController;
 
 // All API routes need web middleware for session-based auth
 Route::middleware(['web'])->group(function () {
@@ -138,6 +140,34 @@ Route::middleware(['check.permission:opportunities,edit'])->group(function () {
 
 Route::middleware(['check.permission:opportunities,delete'])->group(function () {
     Route::delete('/opportunities/{opportunityId}', [OpportunityController::class, 'destroy']);
+});
+
+// Accounts management endpoints (protected)
+Route::middleware(['check.permission:accounts,view'])->group(function () {
+    Route::get('/accounts', [AccountController::class, 'apiIndex']);
+    Route::get('/accounts/{accountId}', [AccountController::class, 'apiShow']);
+});
+
+Route::middleware(['check.permission:accounts,create'])->group(function () {
+    Route::post('/accounts', [AccountController::class, 'store']);
+});
+
+Route::middleware(['check.permission:accounts,edit'])->group(function () {
+    Route::put('/accounts/{accountId}', [AccountController::class, 'update']);
+});
+
+Route::middleware(['check.permission:accounts,delete'])->group(function () {
+    Route::delete('/accounts/{accountId}', [AccountController::class, 'destroy']);
+});
+
+// Cash Transactions management endpoints (protected)
+Route::middleware(['check.permission:transactions,view'])->group(function () {
+    Route::get('/cash-transactions', [CashTransactionController::class, 'apiIndex']);
+    Route::get('/cash-transactions/{transactionId}', [CashTransactionController::class, 'apiShow']);
+});
+
+Route::middleware(['check.permission:transactions,create'])->group(function () {
+    Route::post('/cash-transactions', [CashTransactionController::class, 'store']);
 });
 
 }); // End web middleware group

@@ -97,7 +97,7 @@ No service calls.
                     Loading...
                 </div>
                 
-                <div x-show="!loading.progress && selectedProject" class="text-center py-8">
+                <div x-show="!loading.progress && selectedProject && dashboards.progress !== null" class="text-center py-8">
                     <div class="text-6xl font-bold text-indigo-400 mb-2">
                         <span x-text="dashboards.progress"></span>%
                     </div>
@@ -108,8 +108,19 @@ No service calls.
                     </div>
                 </div>
                 
-                <div x-show="!loading.progress && !selectedProject" class="text-center py-12 text-gray-400">
-                    Select a project to view progress
+                <div x-show="!loading.progress && !selectedProject && dashboards.progressAggregate !== null" class="text-center py-8">
+                    <div class="text-6xl font-bold text-indigo-400 mb-2">
+                        <span x-text="dashboards.progressAggregate"></span>%
+                    </div>
+                    <div class="text-gray-400">Overall Progress (All Projects)</div>
+                    <div class="mt-4 w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" 
+                             :style="`width: ${dashboards.progressAggregate}%`"></div>
+                    </div>
+                </div>
+                
+                <div x-show="!loading.progress && !selectedProject && dashboards.progressAggregate === null" class="text-center py-12 text-gray-400">
+                    No project data available
                 </div>
             </div>
 
@@ -131,9 +142,9 @@ No service calls.
                     Loading...
                 </div>
                 
-                <div x-show="!loading.paymentGap && selectedProject" class="text-center py-8">
+                <div x-show="!loading.paymentGap && selectedProject && dashboards.paymentGap.gap !== undefined" class="text-center py-8">
                     <div class="text-5xl font-bold text-yellow-400 mb-2">
-                        <span x-text="dashboards.paymentGap.currency"></span> <span x-text="Math.abs(dashboards.paymentGap.gap).toLocaleString()"></span>
+                        <span x-text="dashboards.paymentGap.currency || 'UGX'"></span> <span x-text="Math.abs(dashboards.paymentGap.gap || 0).toLocaleString()"></span>
                     </div>
                     <div class="text-gray-400">
                         <span x-show="dashboards.paymentGap.gap > 0" class="text-green-400">Payment ahead of work</span>
@@ -142,8 +153,17 @@ No service calls.
                     </div>
                 </div>
                 
-                <div x-show="!loading.paymentGap && !selectedProject" class="text-center py-12 text-gray-400">
-                    Select a project to view payment gap
+                <div x-show="!loading.paymentGap && !selectedProject && dashboards.paymentGapAggregate !== null" class="text-center py-8">
+                    <div class="text-5xl font-bold text-yellow-400 mb-2">
+                        <span x-text="dashboards.paymentGapAggregate.currency || 'UGX'"></span> <span x-text="Math.abs(dashboards.paymentGapAggregate.gap || 0).toLocaleString()"></span>
+                    </div>
+                    <div class="text-gray-400">
+                        Overall Payment Gap (All Projects)
+                    </div>
+                </div>
+                
+                <div x-show="!loading.paymentGap && !selectedProject && dashboards.paymentGapAggregate === null" class="text-center py-12 text-gray-400">
+                    No payment data available
                 </div>
             </div>
 
@@ -179,8 +199,26 @@ No service calls.
                     <div class="text-gray-400 capitalize" x-text="dashboards.health.status ? dashboards.health.status.replace('-', ' ') : ''"></div>
                 </div>
                 
-                <div x-show="!loading.health && !selectedProject" class="text-center py-12 text-gray-400">
-                    Select a project to view health
+                <div x-show="!loading.health && !selectedProject && dashboards.healthAggregate" class="text-center py-8">
+                    <div class="text-sm text-gray-400 mb-4">Overall Health (All Projects)</div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-green-400" x-text="dashboards.healthAggregate.healthy || 0"></div>
+                            <div class="text-xs text-gray-400 mt-1">Healthy</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-yellow-400" x-text="dashboards.healthAggregate.atRisk || 0"></div>
+                            <div class="text-xs text-gray-400 mt-1">At Risk</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-red-400" x-text="dashboards.healthAggregate.critical || 0"></div>
+                            <div class="text-xs text-gray-400 mt-1">Critical</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div x-show="!loading.health && !selectedProject && !dashboards.healthAggregate" class="text-center py-12 text-gray-400">
+                    No health data available
                 </div>
             </div>
 
@@ -296,17 +334,20 @@ No service calls.
                 projects: [],
                 selectedProject: '',
                 dashboards: {
-                    progress: 0,
+                    progress: null,
+                    progressAggregate: null,
                     paymentGap: { gap: 0, currency: 'UGX' },
-                    health: { status: 'healthy' },
+                    paymentGapAggregate: null,
+                    health: { status: null },
+                    healthAggregate: null,
                     cashFlow: { total_inflow: 0, total_outflow: 0, net_flow: 0 },
                     expenses: { expenses: [], total_amount: 0, currency: 'UGX' },
                     pipeline: { opportunities: [], total_value: 0 }
                 },
                 loading: {
-                    progress: false,
-                    paymentGap: false,
-                    health: false,
+                    progress: true,
+                    paymentGap: true,
+                    health: true,
                     cashFlow: true,
                     expenses: true,
                     pipeline: true
@@ -315,6 +356,7 @@ No service calls.
                 async init() {
                     await this.loadProjects();
                     await this.loadGlobalDashboards();
+                    await this.loadAggregateDashboards();
                 },
 
                 async loadProjects() {
@@ -431,6 +473,95 @@ No service calls.
                         console.error('Error loading pipeline:', error);
                     } finally {
                         this.loading.pipeline = false;
+                    }
+                },
+
+                async loadAggregateDashboards() {
+                    // Load aggregate data for all projects
+                    await Promise.all([
+                        this.loadAggregateProgress(),
+                        this.loadAggregatePaymentGap(),
+                        this.loadAggregateHealth()
+                    ]);
+                },
+
+                async loadAggregateProgress() {
+                    this.loading.progress = true;
+                    try {
+                        let totalProgress = 0;
+                        let count = 0;
+                        
+                        for (const project of this.projects) {
+                            const response = await fetch(`/api/projects/${project.id}/progress`, {
+                                headers: { 'Accept': 'application/json' }
+                            });
+                            const progress = await response.json();
+                            if (typeof progress === 'number') {
+                                totalProgress += progress;
+                                count++;
+                            }
+                        }
+                        
+                        this.dashboards.progressAggregate = count > 0 ? Math.round(totalProgress / count) : null;
+                    } catch (error) {
+                        console.error('Error loading aggregate progress:', error);
+                        this.dashboards.progressAggregate = null;
+                    } finally {
+                        this.loading.progress = false;
+                    }
+                },
+
+                async loadAggregatePaymentGap() {
+                    this.loading.paymentGap = true;
+                    try {
+                        let totalGap = 0;
+                        let currency = 'UGX';
+                        
+                        for (const project of this.projects) {
+                            const response = await fetch(`/api/projects/${project.id}/payment-gap`, {
+                                headers: { 'Accept': 'application/json' }
+                            });
+                            const gap = await response.json();
+                            if (gap && gap.gap !== undefined) {
+                                totalGap += gap.gap;
+                                currency = gap.currency || currency;
+                            }
+                        }
+                        
+                        this.dashboards.paymentGapAggregate = { gap: totalGap, currency: currency };
+                    } catch (error) {
+                        console.error('Error loading aggregate payment gap:', error);
+                        this.dashboards.paymentGapAggregate = null;
+                    } finally {
+                        this.loading.paymentGap = false;
+                    }
+                },
+
+                async loadAggregateHealth() {
+                    this.loading.health = true;
+                    try {
+                        let healthy = 0;
+                        let atRisk = 0;
+                        let critical = 0;
+                        
+                        for (const project of this.projects) {
+                            const response = await fetch(`/api/projects/${project.id}/health`, {
+                                headers: { 'Accept': 'application/json' }
+                            });
+                            const health = await response.json();
+                            if (health && health.status) {
+                                if (health.status === 'healthy') healthy++;
+                                else if (health.status === 'at-risk') atRisk++;
+                                else if (health.status === 'critical') critical++;
+                            }
+                        }
+                        
+                        this.dashboards.healthAggregate = { healthy, atRisk, critical };
+                    } catch (error) {
+                        console.error('Error loading aggregate health:', error);
+                        this.dashboards.healthAggregate = null;
+                    } finally {
+                        this.loading.health = false;
                     }
                 }
             };

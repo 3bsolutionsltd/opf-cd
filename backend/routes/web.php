@@ -99,3 +99,16 @@ Route::middleware(['check.permission:opportunities,edit'])->group(function () {
     Route::get('/opportunities/{opportunityId}/edit', [OpportunityController::class, 'edit'])->name('opportunities.edit');
 });
 
+// Opportunities management routes (protected)
+Route::middleware(['check.permission:opportunities,view'])->group(function () {
+    Route::get('/opportunities', [OpportunityController::class, 'index'])->name('opportunities.index');
+});
+
+Route::middleware(['check.permission:opportunities,create'])->group(function () {
+    Route::get('/opportunities/create', [OpportunityController::class, 'create'])->name('opportunities.create');
+});
+
+Route::middleware(['check.permission:opportunities,edit'])->group(function () {
+    Route::get('/opportunities/{opportunityId}/edit', [OpportunityController::class, 'edit'])->name('opportunities.edit');
+});
+

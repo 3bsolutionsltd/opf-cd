@@ -14,7 +14,7 @@ use App\Http\Controllers\CashTransactionController;
 // Authentication routes (public)
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout']);
+Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout']);
 
 // Landing page (public)
 Route::get('/', function () {

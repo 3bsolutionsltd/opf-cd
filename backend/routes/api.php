@@ -10,6 +10,7 @@ use App\Http\Controllers\ProjectManagementController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\OpportunityController;
 
 // All API routes need web middleware for session-based auth
 Route::middleware(['web'])->group(function () {
@@ -119,6 +120,24 @@ Route::middleware(['check.permission:expenses,edit'])->group(function () {
 
 Route::middleware(['check.permission:expenses,delete'])->group(function () {
     Route::delete('/expenses/{expenseId}', [ExpenseController::class, 'destroy']);
+});
+
+// Opportunities management endpoints (protected)
+Route::middleware(['check.permission:opportunities,view'])->group(function () {
+    Route::get('/opportunities', [OpportunityController::class, 'apiIndex']);
+    Route::get('/opportunities/{opportunityId}', [OpportunityController::class, 'apiShow']);
+});
+
+Route::middleware(['check.permission:opportunities,create'])->group(function () {
+    Route::post('/opportunities', [OpportunityController::class, 'store']);
+});
+
+Route::middleware(['check.permission:opportunities,edit'])->group(function () {
+    Route::put('/opportunities/{opportunityId}', [OpportunityController::class, 'update']);
+});
+
+Route::middleware(['check.permission:opportunities,delete'])->group(function () {
+    Route::delete('/opportunities/{opportunityId}', [OpportunityController::class, 'destroy']);
 });
 
 }); // End web middleware group

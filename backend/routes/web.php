@@ -7,6 +7,7 @@ use App\Http\Controllers\ProjectManagementController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\OpportunityController;
 
 // Authentication routes (public)
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -83,5 +84,18 @@ Route::middleware(['check.permission:expenses,create'])->group(function () {
 
 Route::middleware(['check.permission:expenses,edit'])->group(function () {
     Route::get('/expenses/{expenseId}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
+});
+
+// Opportunities management routes (protected)
+Route::middleware(['check.permission:opportunities,view'])->group(function () {
+    Route::get('/opportunities', [OpportunityController::class, 'index'])->name('opportunities.index');
+});
+
+Route::middleware(['check.permission:opportunities,create'])->group(function () {
+    Route::get('/opportunities/create', [OpportunityController::class, 'create'])->name('opportunities.create');
+});
+
+Route::middleware(['check.permission:opportunities,edit'])->group(function () {
+    Route::get('/opportunities/{opportunityId}/edit', [OpportunityController::class, 'edit'])->name('opportunities.edit');
 });
 

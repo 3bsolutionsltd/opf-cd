@@ -1305,3 +1305,265 @@ Supported currencies: UGX, USD
 ### Currency Support
 Supported currencies: UGX, USD
 
+---
+
+## Opportunities Management
+
+### GET /api/opportunities
+Retrieve all opportunities ordered by expected close date.
+
+**Permissions**: `opportunities,view`
+
+Request: None
+
+Response (Success - 200):
+```json
+[
+  {
+    "id": 1,
+    "client": "ABC Corporation",
+    "description": "Website redesign project",
+    "estimated_value": 25000000.00,
+    "probability": 75.00,
+    "stage": "proposal",
+    "source": "Referral",
+    "owner": 2,
+    "owner_email": "sales@example.com",
+    "expected_close_date": "2025-03-15",
+    "created_at": "2025-01-10 08:00:00",
+    "updated_at": "2025-01-15 14:30:00"
+  },
+  {
+    "id": 2,
+    "client": "XYZ Industries",
+    "description": "Mobile app development",
+    "estimated_value": 45000000.00,
+    "probability": 50.00,
+    "stage": "negotiation",
+    "source": "LinkedIn",
+    "owner": 3,
+    "owner_email": "manager@example.com",
+    "expected_close_date": "2025-04-01",
+    "created_at": "2025-01-12 10:15:00",
+    "updated_at": "2025-01-18 16:45:00"
+  }
+]
+```
+
+---
+
+### GET /api/opportunities/{opportunityId}
+Retrieve details of a specific opportunity.
+
+**Permissions**: `opportunities,view`
+
+Request: None
+
+Response (Success - 200):
+```json
+{
+  "id": 1,
+  "client": "ABC Corporation",
+  "description": "Website redesign project",
+  "estimated_value": 25000000.00,
+  "probability": 75.00,
+  "stage": "proposal",
+  "source": "Referral",
+  "owner": 2,
+  "owner_email": "sales@example.com",
+  "expected_close_date": "2025-03-15",
+  "created_at": "2025-01-10 08:00:00",
+  "updated_at": "2025-01-15 14:30:00"
+}
+```
+
+Response (Not Found - 404):
+```json
+{
+  "success": false,
+  "message": "Opportunity not found."
+}
+```
+
+---
+
+### POST /api/opportunities
+Create a new sales opportunity.
+
+**Permissions**: `opportunities,create`
+
+Request:
+```json
+{
+  "client": "ABC Corporation",
+  "description": "Website redesign project",
+  "estimated_value": 25000000.00,
+  "probability": 75.00,
+  "stage": "proposal",
+  "source": "Referral",
+  "owner": 2,
+  "expected_close_date": "2025-03-15"
+}
+```
+
+**Validation Rules**:
+- `client`: required, string, max 255 characters
+- `description`: required, string, max 255 characters
+- `estimated_value`: required, numeric, >= 0
+- `probability`: required, numeric, 0-100
+- `stage`: required, one of: `lead`, `qualified`, `proposal`, `negotiation`, `won`, `lost`
+- `source`: required, string, max 100 characters
+- `owner`: required, integer, must exist in users table
+- `expected_close_date`: required, date, must be today or later (only on create)
+
+Response (Success - 201):
+```json
+{
+  "success": true,
+  "message": "Opportunity created successfully.",
+  "opportunity_id": 5
+}
+```
+
+Response (Validation Error - 422):
+```json
+{
+  "message": "Validation failed",
+  "errors": {
+    "client": ["Client name is required."],
+    "probability": ["Probability must be at least 0%."],
+    "stage": ["Stage must be one of: lead, qualified, proposal, negotiation, won, or lost."]
+  }
+}
+```
+
+Response (Server Error - 500):
+```json
+{
+  "success": false,
+  "message": "Failed to create opportunity: [error details]",
+  "opportunity_id": null
+}
+```
+
+---
+
+### PUT /api/opportunities/{opportunityId}
+Update an existing opportunity.
+
+**Permissions**: `opportunities,edit`
+
+Request (partial updates allowed via `sometimes` validation):
+```json
+{
+  "client": "ABC Corporation Ltd",
+  "probability": 85.00,
+  "stage": "negotiation"
+}
+```
+
+**Validation Rules**:
+All fields use `sometimes` modifier (only validate if present):
+- `client`: required if present, string, max 255 characters
+- `description`: required if present, string, max 255 characters
+- `estimated_value`: required if present, numeric, >= 0
+- `probability`: required if present, numeric, 0-100
+- `stage`: required if present, one of: `lead`, `qualified`, `proposal`, `negotiation`, `won`, `lost`
+- `source`: required if present, string, max 100 characters
+- `owner`: required if present, integer, must exist in users table
+- `expected_close_date`: required if present, date (no date restriction on edit)
+
+Response (Success - 200):
+```json
+{
+  "success": true,
+  "message": "Opportunity updated successfully."
+}
+```
+
+Response (Not Found - 404):
+```json
+{
+  "success": false,
+  "message": "Opportunity not found."
+}
+```
+
+Response (Validation Error - 422):
+```json
+{
+  "message": "Validation failed",
+  "errors": {
+    "probability": ["Probability cannot exceed 100%."],
+    "owner": ["Selected owner does not exist."]
+  }
+}
+```
+
+Response (Server Error - 500):
+```json
+{
+  "success": false,
+  "message": "Failed to update opportunity: [error details]"
+}
+```
+
+---
+
+### DELETE /api/opportunities/{opportunityId}
+Delete an opportunity.
+
+**Permissions**: `opportunities,delete`
+
+Request: None
+
+Response (Success - 200):
+```json
+{
+  "success": true,
+  "message": "Opportunity deleted successfully."
+}
+```
+
+Response (Not Found - 404):
+```json
+{
+  "success": false,
+  "message": "Opportunity not found."
+}
+```
+
+Response (Server Error - 500):
+```json
+{
+  "success": false,
+  "message": "Failed to delete opportunity: [error details]"
+}
+```
+
+---
+
+### Opportunity Stage Values
+- `lead`: Initial contact, not yet qualified
+- `qualified`: Confirmed as potential customer with budget/need
+- `proposal`: Formal proposal submitted
+- `negotiation`: In negotiation phase (pricing, terms, scope)
+- `won`: Opportunity closed successfully
+- `lost`: Opportunity lost to competitor or rejected
+
+### Probability Rules
+- Must be numeric value between 0 and 100 (inclusive)
+- Represents percentage chance of closing the deal
+- Used in weighted pipeline calculations (estimated_value * probability)
+
+### Owner Constraint
+- Owner field references `users` table
+- Owner cannot be deleted while assigned to opportunities (ON DELETE RESTRICT)
+- Owner email displayed alongside opportunity data via join
+
+### Expected Close Date
+- Create: Must be today or later (enforced by validation)
+- Edit: No date restriction (allows updating past opportunities)
+- Used to order opportunities (ASC by expected_close_date, then by created_at DESC)
+
+

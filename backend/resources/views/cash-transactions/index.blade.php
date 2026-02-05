@@ -267,7 +267,7 @@
                                     <td x-text="transaction.type.toUpperCase()"></td>
                                     <td x-text="formatCurrency(transaction.amount, transaction.currency)"></td>
                                     <td>
-                                        <div x-text="transaction.source_type"></div>
+                                        <div x-text="formatSourceType(transaction.source_type)"></div>
                                         <div style="font-size: 12px; color: #6b7280;" x-text="'ID: ' + transaction.source_id"></div>
                                     </td>
                                 </tr>
@@ -329,6 +329,20 @@
 
                 formatCurrency(value, currency) {
                     return `${currency} ${parseFloat(value).toLocaleString()}`;
+                },
+
+                formatSourceType(sourceType) {
+                    const labels = {
+                        'project': 'Project',
+                        'expense': 'Expense',
+                        'milestone': 'Payment Milestone',
+                        'opportunity': 'Opportunity',
+                        'manual': 'Manual Entry',
+                        // Legacy values from before dropdown fix
+                        'project_payment': 'Project Payment',
+                        'client_invoice': 'Client Invoice'
+                    };
+                    return labels[sourceType] || sourceType;
                 }
             }
         }

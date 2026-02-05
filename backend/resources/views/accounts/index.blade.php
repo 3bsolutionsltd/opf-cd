@@ -165,6 +165,7 @@
                         return;
                     }
 
+                    // Clear previous messages
                     this.deleteError = '';
                     this.deleteSuccess = '';
 

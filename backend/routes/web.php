@@ -8,6 +8,8 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\OpportunityController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\CashTransactionController;
 
 // Authentication routes (public)
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -99,16 +101,24 @@ Route::middleware(['check.permission:opportunities,edit'])->group(function () {
     Route::get('/opportunities/{opportunityId}/edit', [OpportunityController::class, 'edit'])->name('opportunities.edit');
 });
 
-// Opportunities management routes (protected)
-Route::middleware(['check.permission:opportunities,view'])->group(function () {
-    Route::get('/opportunities', [OpportunityController::class, 'index'])->name('opportunities.index');
+// Accounts management routes (protected)
+Route::middleware(['check.permission:accounts,view'])->group(function () {
+    Route::get('/accounts', [AccountController::class, 'index'])->name('accounts.index');
 });
 
-Route::middleware(['check.permission:opportunities,create'])->group(function () {
-    Route::get('/opportunities/create', [OpportunityController::class, 'create'])->name('opportunities.create');
+Route::middleware(['check.permission:accounts,create'])->group(function () {
+    Route::get('/accounts/create', [AccountController::class, 'create'])->name('accounts.create');
 });
 
-Route::middleware(['check.permission:opportunities,edit'])->group(function () {
-    Route::get('/opportunities/{opportunityId}/edit', [OpportunityController::class, 'edit'])->name('opportunities.edit');
+Route::middleware(['check.permission:accounts,edit'])->group(function () {
+    Route::get('/accounts/{accountId}/edit', [AccountController::class, 'edit'])->name('accounts.edit');
 });
 
+// Cash Transactions management routes (protected)
+Route::middleware(['check.permission:cash_transactions,view'])->group(function () {
+    Route::get('/cash-transactions', [CashTransactionController::class, 'index'])->name('cash-transactions.index');
+});
+
+Route::middleware(['check.permission:cash_transactions,create'])->group(function () {
+    Route::get('/cash-transactions/create', [CashTransactionController::class, 'create'])->name('cash-transactions.create');
+});

@@ -1566,4 +1566,324 @@ Response (Server Error - 500):
 - Edit: No date restriction (allows updating past opportunities)
 - Used to order opportunities (ASC by expected_close_date, then by created_at DESC)
 
+---
+
+## Accounts & Cash Transactions Management
+
+### GET /api/accounts
+Retrieve all accounts.
+
+Response (Success - 200):
+```json
+[
+  {
+    "id": 1,
+    "name": "Stanbic Bank Business Account",
+    "type": "bank",
+    "currency": "UGX",
+    "opening_balance": 5000000,
+    "created_at": "2026-02-05T10:30:00Z",
+    "updated_at": "2026-02-05T10:30:00Z"
+  },
+  {
+    "id": 2,
+    "name": "MTN Mobile Money",
+    "type": "mobile_money",
+    "currency": "UGX",
+    "opening_balance": 250000,
+    "created_at": "2026-02-05T11:15:00Z",
+    "updated_at": "2026-02-05T11:15:00Z"
+  }
+]
+```
+
+---
+
+### GET /api/accounts/{accountId}
+Retrieve single account details.
+
+Response (Success - 200):
+```json
+{
+  "id": 1,
+  "name": "Stanbic Bank Business Account",
+  "type": "bank",
+  "currency": "UGX",
+  "opening_balance": 5000000,
+  "created_at": "2026-02-05T10:30:00Z",
+  "updated_at": "2026-02-05T10:30:00Z"
+}
+```
+
+Response (Not Found - 404):
+```json
+{
+  "success": false,
+  "message": "Account not found."
+}
+```
+
+---
+
+### POST /api/accounts
+Create a new account.
+
+Request:
+```json
+{
+  "name": "Petty Cash",
+  "type": "cash",
+  "currency": "USD",
+  "opening_balance": 500
+}
+```
+
+Validation Rules:
+- `name`: required, string, max 255 characters
+- `type`: required, enum (bank|mobile_money|cash)
+- `currency`: required, enum (UGX|USD)
+- `opening_balance`: required, numeric, min 0
+
+Response (Success - 200):
+```json
+{
+  "success": true,
+  "message": "Account created successfully.",
+  "account_id": 3
+}
+```
+
+Response (Validation Error - 422):
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "type": ["The selected type is invalid."],
+    "opening_balance": ["The opening balance must be at least 0."]
+  }
+}
+```
+
+---
+
+### PUT /api/accounts/{accountId}
+Update existing account (partial updates supported).
+
+Request:
+```json
+{
+  "name": "Stanbic Bank Updated Name"
+}
+```
+
+Validation Rules (all optional via "sometimes" modifier):
+- `name`: string, max 255 characters
+- `type`: enum (bank|mobile_money|cash)
+- `currency`: enum (UGX|USD)
+- `opening_balance`: numeric, min 0
+
+Response (Success - 200):
+```json
+{
+  "success": true,
+  "message": "Account updated successfully."
+}
+```
+
+Response (Not Found - 404):
+```json
+{
+  "success": false,
+  "message": "Account not found."
+}
+```
+
+---
+
+### DELETE /api/accounts/{accountId}
+Delete an account.
+
+Response (Success - 200):
+```json
+{
+  "success": true,
+  "message": "Account deleted successfully."
+}
+```
+
+Response (Not Found - 404):
+```json
+{
+  "success": false,
+  "message": "Account not found."
+}
+```
+
+Response (Constraint Violation - 500):
+```json
+{
+  "success": false,
+  "message": "Failed to delete account: [error details]"
+}
+```
+
+Note: Deletion fails if transactions exist for this account (ON DELETE RESTRICT in database).
+
+---
+
+### GET /api/cash-transactions
+Retrieve all cash transactions, optionally filtered by account.
+
+Query Parameters:
+- `account_id` (optional): Filter transactions for specific account
+
+Response (Success - 200):
+```json
+[
+  {
+    "id": 1,
+    "account_id": 1,
+    "account_name": "Stanbic Bank Business Account",
+    "account_type": "bank",
+    "type": "inflow",
+    "amount": 100000,
+    "currency": "UGX",
+    "source_type": "project_payment",
+    "source_id": 1,
+    "transaction_date": "2026-02-05",
+    "created_at": "2026-02-05T14:20:00Z"
+  },
+  {
+    "id": 2,
+    "account_id": 1,
+    "account_name": "Stanbic Bank Business Account",
+    "account_type": "bank",
+    "type": "outflow",
+    "amount": 25000,
+    "currency": "UGX",
+    "source_type": "expense",
+    "source_id": 5,
+    "transaction_date": "2026-02-05",
+    "created_at": "2026-02-05T15:45:00Z"
+  }
+]
+```
+
+---
+
+### GET /api/cash-transactions/{transactionId}
+Retrieve single transaction details.
+
+Response (Success - 200):
+```json
+{
+  "id": 1,
+  "account_id": 1,
+  "account_name": "Stanbic Bank Business Account",
+  "account_type": "bank",
+  "type": "inflow",
+  "amount": 100000,
+  "currency": "UGX",
+  "source_type": "project_payment",
+  "source_id": 1,
+  "transaction_date": "2026-02-05",
+  "created_at": "2026-02-05T14:20:00Z"
+}
+```
+
+Response (Not Found - 404):
+```json
+{
+  "success": false,
+  "message": "Transaction not found."
+}
+```
+
+---
+
+### POST /api/cash-transactions
+Record a new cash transaction.
+
+Request:
+```json
+{
+  "account_id": 1,
+  "type": "inflow",
+  "amount": 150000,
+  "currency": "UGX",
+  "source_type": "project_payment",
+  "source_id": 2,
+  "transaction_date": "2026-02-05"
+}
+```
+
+Validation Rules:
+- `account_id`: required, integer, must exist in accounts table
+- `type`: required, enum (inflow|outflow)
+- `amount`: required, numeric, must be greater than 0
+- `currency`: required, enum (UGX|USD)
+- `source_type`: required, string, max 50 characters
+- `source_id`: required, integer
+- `transaction_date`: required, date
+
+Response (Success - 200):
+```json
+{
+  "success": true,
+  "message": "Transaction recorded successfully.",
+  "transaction_id": 3
+}
+```
+
+Response (Validation Error - 422):
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "amount": ["The amount must be greater than 0."],
+    "account_id": ["The selected account id is invalid."]
+  }
+}
+```
+
+---
+
+### Account Type Values
+- `bank`: Traditional bank account
+- `mobile_money`: Mobile money service (e.g., MTN, Airtel)
+- `cash`: Physical cash holdings
+
+### Transaction Type Values
+- `inflow`: Money received (increases balance)
+- `outflow`: Money paid (decreases balance)
+
+### Currency Values
+- `UGX`: Ugandan Shilling
+- `USD`: US Dollar
+
+### Balance Calculation
+- **Opening Balance**: Initial balance when account tracking started (stored in `accounts.opening_balance`)
+- **Current Balance**: Calculated value = opening_balance + SUM(inflows) - SUM(outflows)
+- Services return ONLY `opening_balance` from database (NO balance calculations)
+- Current balance computed elsewhere (future CashFlowService or reporting layer)
+
+### Transaction Immutability
+- Cash transactions are **append-only audit records**
+- NO update or delete operations allowed via API
+- Once recorded, transactions cannot be modified (enforced at database and application layer)
+- Schema has `created_at` but NO `updated_at` column
+- Database comment: "append-only audit records - never updated or deleted"
+
+### Account Constraints
+- Opening balance must be >= 0 (CHECK constraint)
+- Accounts cannot be deleted if transactions exist (ON DELETE RESTRICT)
+- Account ID required for all transactions (foreign key constraint)
+
+### Ordering & Filtering
+- **Accounts**: Ordered by `created_at` DESC (newest first)
+- **Transactions**: Ordered by `transaction_date` DESC, then `created_at` DESC
+- **Filtering**: GET /api/cash-transactions accepts optional `?account_id=X` query parameter
+
 

@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="min-h-full bg-slate-950 text-gray-100">
@@ -137,7 +138,7 @@
                                             </span>
                                         </template>
                                         <template x-if="!expense.is_paid">
-                                            <button @click="deleteExpense(expense.id)" class="px-3 py-1 text-sm rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 transition-all">
+                                            <button @click="confirmDelete(expense.id, expense.description)" class="px-3 py-1 text-sm rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 transition-all">
                                                 Delete
                                             </button>
                                         </template>
@@ -157,6 +158,45 @@
                 </div>
             </div>
         </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div x-show="showDeleteModal" 
+             x-cloak 
+             class="fixed inset-0 z-50 overflow-y-auto" 
+             style="display: none;">
+            <!-- Backdrop -->
+            <div class="fixed inset-0 bg-black/70 transition-opacity" 
+                 @click="showDeleteModal = false"></div>
+            
+            <!-- Modal -->
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative bg-slate-900 rounded-xl shadow-2xl border border-white/10 max-w-md w-full p-6"
+                     @click.stop>
+                    <div class="mb-4">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
+                            <svg class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                            </svg>
+                        </div>
+                        <h3 class="mt-4 text-lg font-semibold text-gray-100">Delete Expense</h3>
+                        <p class="mt-2 text-sm text-gray-400">
+                            Are you sure you want to delete <span class="font-semibold text-gray-200" x-text="deleteTarget?.name"></span>? 
+                            This action cannot be undone.
+                        </p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button @click="showDeleteModal = false" 
+                                class="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-gray-300">
+                            Cancel
+                        </button>
+                        <button @click="executeDelete()" 
+                                class="flex-1 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 transition-all text-white font-medium">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -168,6 +208,8 @@
                 error: '',
                 deleteError: '',
                 deleteSuccess: '',
+                showDeleteModal: false,
+                deleteTarget: null,
 
                 async init() {
                     await Promise.all([
@@ -214,10 +256,17 @@
                     }
                 },
 
-                async deleteExpense(expenseId) {
-                    if (!confirm('Are you sure you want to delete this expense?')) {
-                        return;
-                    }
+                confirmDelete(expenseId, expenseName) {
+                    this.deleteTarget = { id: expenseId, name: expenseName };
+                    this.showDeleteModal = true;
+                },
+
+                async executeDelete() {
+                    if (!this.deleteTarget) return;
+                    
+                    this.showDeleteModal = false;
+                    const expenseId = this.deleteTarget.id;
+                    this.deleteTarget = null;
 
                     this.deleteError = '';
                     this.deleteSuccess = '';

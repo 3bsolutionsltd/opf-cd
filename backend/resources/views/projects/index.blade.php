@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="min-h-full bg-slate-950 text-gray-100">
@@ -118,7 +119,7 @@
                                                 <a :href="'/projects/' + project.id + '/edit'" class="block px-4 py-2 text-sm text-gray-300 hover:bg-white/10 transition-colors">
                                                     Edit
                                                 </a>
-                                                <button @click="deleteProject(project.id); open = false" class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/10 transition-colors">
+                                                <button @click="confirmDelete(project.id, project.name); open = false" class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/10 transition-colors">
                                                     Delete
                                                 </button>
                                             </div>
@@ -136,6 +137,45 @@
                     <a href="/projects/create" class="inline-block mt-4 text-indigo-400 hover:text-indigo-300">
                         Create your first project
                     </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div x-show="showDeleteModal" 
+             x-cloak 
+             class="fixed inset-0 z-50 overflow-y-auto" 
+             style="display: none;">
+            <!-- Backdrop -->
+            <div class="fixed inset-0 bg-black/70 transition-opacity" 
+                 @click="showDeleteModal = false"></div>
+            
+            <!-- Modal -->
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative bg-slate-900 rounded-xl shadow-2xl border border-white/10 max-w-md w-full p-6"
+                     @click.stop>
+                    <div class="mb-4">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
+                            <svg class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                            </svg>
+                        </div>
+                        <h3 class="mt-4 text-lg font-semibold text-gray-100">Delete Project</h3>
+                        <p class="mt-2 text-sm text-gray-400">
+                            Are you sure you want to delete <span class="font-semibold text-gray-200" x-text="deleteTarget?.name"></span>? 
+                            This action cannot be undone.
+                        </p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button @click="showDeleteModal = false" 
+                                class="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-gray-300">
+                            Cancel
+                        </button>
+                        <button @click="executeDelete()" 
+                                class="flex-1 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 transition-all text-white font-medium">
+                            Delete
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -173,10 +213,17 @@
                     }
                 },
 
-                async deleteProject(projectId) {
-                    if (!confirm('Are you sure you want to delete this project?')) {
-                        return;
-                    }
+                confirmDelete(projectId, projectName) {
+                    this.deleteTarget = { id: projectId, name: projectName };
+                    this.showDeleteModal = true;
+                },
+
+                async executeDelete() {
+                    if (!this.deleteTarget) return;
+                    
+                    this.showDeleteModal = false;
+                    const projectId = this.deleteTarget.id;
+                    this.deleteTarget = null;
 
                     this.deleteError = '';
                     this.deleteSuccess = '';

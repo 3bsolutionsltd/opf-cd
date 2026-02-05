@@ -178,9 +178,19 @@ class AccountManagementService
                 'message' => 'Account deleted successfully.',
             ];
         } catch (\Exception $e) {
+            // Check if it's a foreign key constraint violation
+            if (str_contains($e->getMessage(), 'Foreign key violation') || 
+                str_contains($e->getMessage(), 'foreign key constraint') ||
+                str_contains($e->getMessage(), '23503')) {
+                return [
+                    'success' => false,
+                    'message' => 'Cannot delete account because it has associated transactions. Please delete all transactions first.',
+                ];
+            }
+
             return [
                 'success' => false,
-                'message' => 'Failed to delete account: ' . $e->getMessage(),
+                'message' => 'Failed to delete account. Please try again or contact support.',
             ];
         }
     }

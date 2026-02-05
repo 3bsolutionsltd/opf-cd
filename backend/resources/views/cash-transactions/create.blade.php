@@ -201,10 +201,40 @@
             margin-bottom: 20px;
             font-size: 14px;
         }
+
+        .breadcrumb {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .breadcrumb a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+            font-size: 14px;
+        }
+
+        .breadcrumb a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .breadcrumb span {
+            color: white;
+            opacity: 0.6;
+            margin: 0 8px;
+        }
     </style>
 </head>
 <body x-data="transactionCreate()" x-init="init()">
     <div class="container">
+        <div class="breadcrumb">
+            <a href="/">Dashboard</a>
+            <span>→</span>
+            <a href="/cash-transactions">Cash Transactions</a>
+            <span>→</span>
+            <span style="opacity: 1;">Record Transaction</span>
+        </div>
         <div class="card">
             <div class="card-header">
                 <h1>Record Cash Transaction</h1>
@@ -271,27 +301,39 @@
 
                             <div class="form-group">
                                 <label for="source_type">Source Type <span class="required">*</span></label>
-                                <input 
-                                    type="text" 
-                                    id="source_type" 
-                                    x-model="form.source_type" 
-                                    placeholder="e.g., project_payment, expense, client_invoice"
-                                    required
-                                    maxlength="50"
-                                >
-                                <div class="help-text">Type of transaction source (e.g., project_payment, expense)</div>
+                                <select id="source_type" x-model="form.source_type" @change="onSourceTypeChange" required>
+                                    <option value="">-- Select Source Type --</option>
+                                    <option value="project">Project</option>
+                                    <option value="expense">Expense</option>
+                                    <option value="milestone">Payment Milestone</option>
+                                    <option value="opportunity">Opportunity</option>
+                                    <option value="manual">Manual Entry (Other)</option>
+                                </select>
+                                <div class="help-text">What type of record is this transaction related to?</div>
                             </div>
 
-                            <div class="form-group">
-                                <label for="source_id">Source ID <span class="required">*</span></label>
+                            <div class="form-group" x-show="form.source_type && form.source_type !== 'manual'">
+                                <label for="source_id">Source <span class="required">*</span></label>
+                                <select id="source_id" x-model.number="form.source_id" :required="form.source_type !== 'manual'">
+                                    <option value="">-- Select <span x-text="sourceTypeLabel"></span> --</option>
+                                    <template x-for="source in sourceOptions" :key="source.id">
+                                        <option :value="source.id" x-text="source.label"></option>
+                                    </template>
+                                </select>
+                                <div class="help-text" x-show="loadingSourceOptions">Loading options...</div>
+                                <div class="help-text" x-show="!loadingSourceOptions" x-text="'Select the ' + sourceTypeLabel.toLowerCase() + ' this transaction is related to'"></div>
+                            </div>
+
+                            <div class="form-group" x-show="form.source_type === 'manual'">
+                                <label for="source_id_manual">Reference Number <span class="required">*</span></label>
                                 <input 
                                     type="number" 
-                                    id="source_id" 
+                                    id="source_id_manual" 
                                     x-model.number="form.source_id" 
-                                    placeholder="e.g., 123"
-                                    required
+                                    placeholder="Enter reference number"
+                                    :required="form.source_type === 'manual'"
                                 >
-                                <div class="help-text">ID of the related record (project ID, expense ID, etc.)</div>
+                                <div class="help-text">Enter any reference number for manual tracking</div>
                             </div>
 
                             <div class="form-group">
@@ -323,6 +365,8 @@
         function transactionCreate() {
             return {
                 accounts: [],
+                sourceOptions: [],
+                loadingSourceOptions: false,
                 form: {
                     account_id: '',
                     type: '',
@@ -336,6 +380,17 @@
                 submitting: false,
                 error: '',
                 success: '',
+
+                get sourceTypeLabel() {
+                    const labels = {
+                        'project': 'Project',
+                        'expense': 'Expense',
+                        'milestone': 'Payment Milestone',
+                        'opportunity': 'Opportunity',
+                        'manual': 'Manual Entry'
+                    };
+                    return labels[this.form.source_type] || 'Source';
+                },
 
                 async init() {
                     await this.fetchAccounts();
@@ -358,6 +413,62 @@
                     const selectedAccount = this.accounts.find(a => a.id == this.form.account_id);
                     if (selectedAccount) {
                         this.form.currency = selectedAccount.currency;
+                    }
+                },
+
+                async onSourceTypeChange() {
+                    this.form.source_id = '';
+                    this.sourceOptions = [];
+
+                    if (!this.form.source_type || this.form.source_type === 'manual') {
+                        return;
+                    }
+
+                    this.loadingSourceOptions = true;
+                    try {
+                        let endpoint = '';
+                        switch(this.form.source_type) {
+                            case 'project':
+                                endpoint = '/api/projects';
+                                break;
+                            case 'expense':
+                                endpoint = '/api/expenses';
+                                break;
+                            case 'milestone':
+                                endpoint = '/api/milestones';
+                                break;
+                            case 'opportunity':
+                                endpoint = '/api/opportunities';
+                                break;
+                        }
+
+                        const response = await fetch(endpoint);
+                        const data = await response.json();
+
+                        // Format options based on source type
+                        this.sourceOptions = data.map(item => {
+                            let label = '';
+                            switch(this.form.source_type) {
+                                case 'project':
+                                    label = `${item.name} (${item.status})`;
+                                    break;
+                                case 'expense':
+                                    label = `${item.category} - ${item.currency} ${item.amount.toLocaleString()}`;
+                                    break;
+                                case 'milestone':
+                                    label = `${item.title} - ${item.currency} ${item.amount.toLocaleString()}`;
+                                    break;
+                                case 'opportunity':
+                                    label = `${item.client} - ${item.description}`;
+                                    break;
+                            }
+                            return { id: item.id, label: label };
+                        });
+                    } catch (error) {
+                        console.error('Error fetching source options:', error);
+                        this.error = 'Failed to load source options. Please try again.';
+                    } finally {
+                        this.loadingSourceOptions = false;
                     }
                 },
 

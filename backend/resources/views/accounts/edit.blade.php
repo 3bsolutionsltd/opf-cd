@@ -164,10 +164,40 @@
             margin-bottom: 20px;
             font-size: 14px;
         }
+
+        .breadcrumb {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .breadcrumb a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+            font-size: 14px;
+        }
+
+        .breadcrumb a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .breadcrumb span {
+            color: white;
+            opacity: 0.6;
+            margin: 0 8px;
+        }
     </style>
 </head>
 <body x-data="accountEdit()" x-init="init()">
     <div class="container">
+        <div class="breadcrumb">
+            <a href="/">Dashboard</a>
+            <span>→</span>
+            <a href="/accounts">Accounts</a>
+            <span>→</span>
+            <span style="opacity: 1;">Edit Account</span>
+        </div>
         <div class="card">
             <div class="card-header">
                 <h1>Edit Account</h1>

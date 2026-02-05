@@ -47,6 +47,20 @@
             </div>
         </div>
 
+        <!-- Delete Error Message -->
+        <div x-show="deleteError" class="max-w-7xl mx-auto mb-6">
+            <div class="rounded-xl bg-red-500/10 border border-red-500/30 p-4">
+                <p class="text-red-400" x-text="deleteError"></p>
+            </div>
+        </div>
+
+        <!-- Delete Success Message -->
+        <div x-show="deleteSuccess" class="max-w-7xl mx-auto mb-6">
+            <div class="rounded-xl bg-green-500/10 border border-green-500/30 p-4">
+                <p class="text-green-400" x-text="deleteSuccess"></p>
+            </div>
+        </div>
+
         <!-- Accounts Table -->
         <div x-show="!loading && !error" class="max-w-7xl mx-auto">
             <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 overflow-hidden">
@@ -116,6 +130,8 @@
                 accounts: [],
                 loading: true,
                 error: null,
+                deleteError: '',
+                deleteSuccess: '',
 
                 async init() {
                     await this.fetchAccounts();
@@ -145,9 +161,12 @@
                 },
 
                 async deleteAccount(accountId) {
-                    if (!confirm('Are you sure you want to delete this account?')) {
+                    if (!confirm('Are you sure you want to delete this account? This will fail if transactions exist.')) {
                         return;
                     }
+
+                    this.deleteError = '';
+                    this.deleteSuccess = '';
 
                     try {
                         const response = await fetch(`/api/accounts/${accountId}`, {
@@ -161,13 +180,18 @@
                         const result = await response.json();
 
                         if (!result.success) {
-                            throw new Error(result.message || 'Failed to delete account');
+                            this.deleteError = result.message || 'Failed to delete account';
+                            // Scroll to top to show error
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            return;
                         }
 
-                        alert(result.message);
+                        this.deleteSuccess = result.message;
+                        setTimeout(() => this.deleteSuccess = '', 3000);
                         await this.fetchAccounts();
                     } catch (err) {
-                        alert(err.message);
+                        this.deleteError = err.message || 'An error occurred while deleting the account';
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 },
 

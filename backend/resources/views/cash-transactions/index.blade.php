@@ -175,10 +175,38 @@
             padding: 40px;
             color: #6b7280;
         }
+
+        .breadcrumb {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .breadcrumb a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+            font-size: 14px;
+        }
+
+        .breadcrumb a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .breadcrumb span {
+            color: white;
+            opacity: 0.6;
+            margin: 0 8px;
+        }
     </style>
 </head>
 <body x-data="transactionsIndex()" x-init="init()">
     <div class="container">
+        <div class="breadcrumb">
+            <a href="/">Dashboard</a>
+            <span>→</span>
+            <span style="opacity: 1;">Cash Transactions</span>
+        </div>
         <div class="page-header">
             <h1>💰 Cash Transactions</h1>
             <a href="/cash-transactions/create" class="btn btn-primary">+ Record Transaction</a>

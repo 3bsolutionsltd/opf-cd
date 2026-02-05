@@ -47,6 +47,20 @@
             </div>
         </div>
 
+        <!-- Delete Error Message -->
+        <div x-show="deleteError" class="max-w-7xl mx-auto mb-6">
+            <div class="rounded-xl bg-red-500/10 border border-red-500/30 p-4">
+                <p class="text-red-400" x-text="deleteError"></p>
+            </div>
+        </div>
+
+        <!-- Delete Success Message -->
+        <div x-show="deleteSuccess" class="max-w-7xl mx-auto mb-6">
+            <div class="rounded-xl bg-green-500/10 border border-green-500/30 p-4">
+                <p class="text-green-400" x-text="deleteSuccess"></p>
+            </div>
+        </div>
+
         <!-- Projects Table -->
         <div x-show="!loading && !error" class="max-w-7xl mx-auto">
             <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 overflow-hidden">
@@ -132,8 +146,8 @@
             return {
                 projects: [],
                 loading: true,
-                error: '',
-
+                error: '',                deleteError: '',
+                deleteSuccess: '',
                 async init() {
                     await this.fetchProjects();
                 },
@@ -164,6 +178,9 @@
                         return;
                     }
 
+                    this.deleteError = '';
+                    this.deleteSuccess = '';
+
                     try {
                         const response = await fetch(`/api/projects/${projectId}`, {
                             method: 'DELETE',
@@ -176,12 +193,16 @@
                         const data = await response.json();
 
                         if (data.success) {
+                            this.deleteSuccess = data.message || 'Project deleted successfully';
+                            setTimeout(() => this.deleteSuccess = '', 3000);
                             await this.fetchProjects();
                         } else {
-                            alert(data.message || 'Failed to delete project');
+                            this.deleteError = data.message || 'Failed to delete project';
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
                         }
                     } catch (e) {
-                        alert('Error deleting project: ' + e.message);
+                        this.deleteError = 'Error deleting project: ' + e.message;
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 }
             }

@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'check.permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
+        
+        // API rate limiting: 60 requests per minute per user
+        $middleware->throttleApi('60,1');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

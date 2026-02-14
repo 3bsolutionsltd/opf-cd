@@ -49,6 +49,20 @@ Route::middleware(['check.permission:dashboards,view'])->group(function () {
     });
 });
 
+// Alerts route (protected)
+Route::middleware(['check.permission:dashboards,view'])->group(function () {
+    Route::get('/alerts', function () {
+        return view('alerts.index');
+    });
+});
+
+// Audit log route (protected)
+Route::middleware(['check.permission:dashboards,view'])->group(function () {
+    Route::get('/audit-logs', function () {
+        return view('audit.index');
+    });
+});
+
 // Projects management routes (protected)
 Route::middleware(['check.permission:projects,view'])->group(function () {
     Route::get('/projects', [ProjectManagementController::class, 'index'])->name('projects.index');

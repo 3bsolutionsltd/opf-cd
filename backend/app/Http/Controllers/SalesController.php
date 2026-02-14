@@ -16,8 +16,14 @@ class SalesController extends Controller
 
     public function getPipeline(): JsonResponse
     {
-        return response()->json(
-            $this->pipelineService->getPipelineForecast()
-        );
+        $forecast = $this->pipelineService->getPipelineForecast();
+        
+        // Transform to match dashboard view expectations
+        return response()->json([
+            'opportunities' => $forecast['by_stage'], // Array of stages with counts
+            'total_value' => $forecast['total_pipeline_value'],
+            'weighted_value' => $forecast['weighted_pipeline_value'],
+            'opportunity_count' => $forecast['opportunity_count']
+        ]);
     }
 }

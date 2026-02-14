@@ -50,7 +50,12 @@ class CashTransactionController extends Controller
      */
     public function store(StoreCashTransactionRequest $request): JsonResponse
     {
-        $result = $this->transactionService->createTransaction($request->validated());
+        $userId = $request->user()->id;
+        $result = $this->transactionService->createTransaction(
+            $request->validated(),
+            $userId,
+            $request
+        );
 
         if ($result['success']) {
             return response()->json($result, 201);

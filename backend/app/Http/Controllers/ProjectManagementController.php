@@ -39,7 +39,12 @@ class ProjectManagementController extends Controller
      */
     public function store(StoreProjectRequest $request): JsonResponse
     {
-        $result = $this->projectManagementService->createProject($request->validated());
+        $userId = $request->user()->id;
+        $result = $this->projectManagementService->createProject(
+            $request->validated(),
+            $userId,
+            $request
+        );
         
         return response()->json($result, $result['success'] ? 201 : 400);
     }
@@ -67,7 +72,13 @@ class ProjectManagementController extends Controller
      */
     public function update(UpdateProjectRequest $request, int $id): JsonResponse
     {
-        $result = $this->projectManagementService->updateProject($id, $request->validated());
+        $userId = $request->user()->id;
+        $result = $this->projectManagementService->updateProject(
+            $id,
+            $request->validated(),
+            $userId,
+            $request
+        );
         
         return response()->json($result, $result['success'] ? 200 : 400);
     }
@@ -77,9 +88,10 @@ class ProjectManagementController extends Controller
      * 
      * Thin pass-through to ProjectManagementService->deleteProject().
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy(\Illuminate\Http\Request $request, int $id): JsonResponse
     {
-        $result = $this->projectManagementService->deleteProject($id);
+        $userId = $request->user()->id;
+        $result = $this->projectManagementService->deleteProject($id, $userId, $request);
         
         return response()->json($result, $result['success'] ? 200 : 400);
     }

@@ -605,10 +605,34 @@ Response:
 {
   "project_id": number,
   "health_status": "green" | "amber" | "red",
-  "score": number,
-  "signals": object,
-  "reasons": string[]
+  "status_label": string,
+  "status_description": string,
+  "score": number (0-100),
+  "signals": {
+    "time_score": number (0-100),
+    "payment_score": number (0-100),
+    "blocker_score": number (0-100),
+    "overdue_score": number (0-100),
+    "payment_gap_percentage": number,
+    "payment_gap_amount": number,
+    "earned_value": number,
+    "received_value": number,
+    "project_progress": number,
+    "project_status": string
+  },
+  "reasons": string[],
+  "details": string[],
+  "recommendations": string[]
 }
+
+Notes:
+- PHI Score = (time_score × 0.3) + (payment_score × 0.3) + (blocker_score × 0.2) + (overdue_score × 0.2)
+- time_score: Actual progress vs expected progress based on timeline
+- payment_score: Based on payment gap (reduced if owed money)
+- blocker_score: Penalty for blocked tasks (10 points per blocked task)
+- overdue_score: Penalty for overdue milestones (15 points per overdue milestone)
+- Health bands: Green ≥80, Amber 50-79, Red <50
+- Formula source: docs/_truth.md
 
 ---
 
@@ -668,13 +692,16 @@ Response:
   "total_projects": number,
   "active_projects": number,
   "cash_at_hand": number,
+  "burn_rate": number,
+  "cash_runway_months": number,
   "total_pipeline_value": number,
   "total_upcoming_expenses": number,
   "health_green_count": number,
   "health_red_count": number,
   "health_amber_count": number,
   "projects_at_risk": number,
-  "currency": string
+  "currency": string,
+  "alert_count": number
 }
 
 Example:
@@ -682,14 +709,23 @@ Example:
   "total_projects": 1,
   "active_projects": 1,
   "cash_at_hand": 120000,
+  "burn_rate": 8500,
+  "cash_runway_months": 14.1,
   "total_pipeline_value": 320000,
   "total_upcoming_expenses": 4700,
   "health_green_count": 0,
   "health_red_count": 0,
   "health_amber_count": 1,
   "projects_at_risk": 0,
-  "currency": "USD"
+  "currency": "USD",
+  "alert_count": 3
 }
+
+Notes:
+- burn_rate: Average monthly outflows over last 3 months
+- cash_runway_months: Cash at hand divided by burn rate (0 if burn rate is 0)
+- alert_count: Number of active (non-dismissed) system alerts
+- Formula from docs/_truth.md: Cash Runway (months) = Cash at Hand / Average Monthly Burn
 
 ---
 
@@ -1886,4 +1922,467 @@ Response (Validation Error - 422):
 - **Transactions**: Ordered by `transaction_date` DESC, then `created_at` DESC
 - **Filtering**: GET /api/cash-transactions accepts optional `?account_id=X` query parameter
 
+---
 
+## Alerts
+
+### GET /api/alerts
+Get all active (non-dismissed) system alerts.
+
+Permission Required: `dashboards:view`
+
+Response (Success - 200):
+```json
+{
+  "success": true,
+  "alerts": [
+    {
+      "id": 1,
+      "type": "project_behind_schedule",
+      "severity": "warning",
+      "entity_type": "project",
+      "entity_id": 5,
+      "message": "Project 'Website Redesign' is behind schedule (time_score: 45). Expected: 60%, Actual: 45%.",
+      "is_dismissed": false,
+      "dismissed_at": null,
+      "dismissed_by": null,
+      "created_at": "2025-01-15T08:30:00Z"
+    },
+    {
+      "id": 2,
+      "type": "low_cash_runway",
+      "severity": "critical",
+      "entity_type": "system",
+      "entity_id": null,
+      "message": "Cash runway critically low: 1.8 months remaining. Consider reducing burn rate or securing additional funding.",
+      "is_dismissed": false,
+      "dismissed_at": null,
+      "dismissed_by": null,
+      "created_at": "2025-01-15T06:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### GET /api/alerts/count
+Get count of active alerts by severity level.
+
+Permission Required: `dashboards:view`
+
+Response (Success - 200):
+```json
+{
+  "total": 8,
+  "critical": 2,
+  "warning": 5,
+  "info": 1
+}
+```
+
+---
+
+### POST /api/alerts/{alertId}/dismiss
+Mark an alert as dismissed (acknowledged).
+
+Permission Required: `dashboards:view`
+
+Response (Success - 200):
+```json
+{
+  "success": true,
+  "message": "Alert dismissed successfully"
+}
+```
+
+Response (Not Found - 404):
+```json
+{
+  "success": false,
+  "message": "Alert not found"
+}
+```
+
+### Alert Fields
+- **id**: Unique alert identifier
+- **type**: Alert type enum
+  - `project_behind_schedule`: Project time_score < 60
+  - `payment_gap_breach`: Payment gap > 20%
+  - `low_cash_runway`: Cash runway < 3 months
+  - `expense_overdue`: Expense past due_date
+  - `opportunity_closing_soon`: Opportunity < 7 days to expected_close_date
+- **severity**: Alert severity enum
+  - `critical`: Requires immediate attention
+  - `warning`: Should be addressed soon
+  - `info`: Informational only
+- **entity_type**: Type of entity alert relates to (`project`, `expense`, `opportunity`, `system`)
+- **entity_id**: ID of related entity (null for system-wide alerts)
+- **message**: Human-readable alert description
+- **is_dismissed**: Whether alert has been acknowledged
+- **dismissed_at**: Timestamp when dismissed (null if not dismissed)
+- **dismissed_by**: User ID who dismissed (null if not dismissed)
+- **created_at**: Alert creation timestamp
+
+### Alert Behavior
+- Alerts are auto-generated daily by scheduled command (`php artisan alerts:evaluate`)
+- Duplicate prevention: No more than 1 alert per type+entity within 7 days
+- Auto-cleanup: Dismissed alerts older than 30 days are automatically removed
+- Dismissal is user-specific tracking (does not delete alert)
+- New alerts of same type can be created after 7 days
+
+---
+
+## Audit Logs
+
+### GET /api/audit-logs
+Get audit logs with optional filters.
+
+Permission Required: `dashboards:view`
+
+Query Parameters:
+- `entity_type`: Filter by entity type (e.g., "projects", "tasks", "expenses")
+- `entity_id`: Filter by specific entity ID
+- `action`: Filter by action type ("create", "update", "delete")
+- `user_id`: Filter by user who performed the action
+- `from_date`: Start date (YYYY-MM-DD format)
+- `to_date`: End date (YYYY-MM-DD format)
+- `limit`: Maximum number of records (default 100, max 500)
+
+Response (Success - 200):
+```json
+{
+  "success": true,
+  "logs": [
+    {
+      "id": 1,
+      "user_id": 5,
+      "user_name": "John Admin",
+      "user_email": "john@example.com",
+      "action": "update",
+      "entity_type": "projects",
+      "entity_id": 3,
+      "changes": {
+        "before": {
+          "status": "active",
+          "end_date": "2026-06-30"
+        },
+        "after": {
+          "status": "completed",
+          "end_date": "2026-02-14"
+        },
+        "changed_fields": ["status", "end_date"]
+      },
+      "ip_address": "192.168.1.100",
+      "user_agent": "Mozilla/5.0...",
+      "created_at": "2026-02-14T10:30:00Z"
+    },
+    {
+      "id": 2,
+      "user_id": 3,
+      "user_name": "Jane User",
+      "user_email": "jane@example.com",
+      "action": "create",
+      "entity_type": "expenses",
+      "entity_id": 15,
+      "changes": {
+        "after": {
+          "amount": 1500,
+          "description": "Server hosting",
+          "due_date": "2026-03-01"
+        }
+      },
+      "ip_address": "192.168.1.105",
+      "user_agent": "Mozilla/5.0...",
+      "created_at": "2026-02-14T09:15:00Z"
+    }
+  ],
+  "count": 2
+}
+```
+
+---
+
+### GET /api/audit-logs/entity/{entityType}/{entityId}
+Get audit logs for a specific entity.
+
+Permission Required: `dashboards:view`
+
+Path Parameters:
+- `entityType`: Entity type (e.g., "projects", "tasks")
+- `entityId`: Entity ID
+
+Query Parameters:
+- `limit`: Maximum number of records (default 50, max 200)
+
+Response (Success - 200):
+```json
+{
+  "success": true,
+  "entity_type": "projects",
+  "entity_id": 3,
+  "logs": [
+    {
+      "id": 1,
+      "user_id": 5,
+      "action": "update",
+      "entity_type": "projects",
+      "entity_id": 3,
+      "changes": {
+        "before": {"status": "active"},
+        "after": {"status": "completed"},
+        "changed_fields": ["status"]
+      },
+      "ip_address": "192.168.1.100",
+      "user_agent": "Mozilla/5.0...",
+      "created_at": "2026-02-14T10:30:00Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+---
+
+### GET /api/audit-logs/user/{userId}
+Get audit logs for a specific user.
+
+Permission Required: `dashboards:view`
+
+Path Parameters:
+- `userId`: User ID
+
+Query Parameters:
+- `limit`: Maximum number of records (default 50, max 200)
+
+Response (Success - 200):
+```json
+{
+  "success": true,
+  "user_id": 5,
+  "logs": [
+    {
+      "id": 1,
+      "user_id": 5,
+      "action": "update",
+      "entity_type": "projects",
+      "entity_id": 3,
+      "changes": {
+        "before": {"status": "active"},
+        "after": {"status": "completed"},
+        "changed_fields": ["status"]
+      },
+      "ip_address": "192.168.1.100",
+      "user_agent": "Mozilla/5.0...",
+      "created_at": "2026-02-14T10:30:00Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+---
+
+### GET /api/audit-logs/stats
+Get audit log statistics.
+
+Permission Required: `dashboards:view`
+
+Query Parameters (all optional):
+- `entity_type`: Filter by entity type
+- `user_id`: Filter by user
+- `from_date`: Start date (YYYY-MM-DD)
+- `to_date`: End date (YYYY-MM-DD)
+
+Response (Success - 200):
+```json
+{
+  "total": 1547,
+  "creates": 523,
+  "updates": 891,
+  "deletes": 133
+}
+```
+
+### Audit Log Fields
+- **id**: Unique audit log identifier
+- **user_id**: ID of user who performed the action
+- **user_name**: Name of user (joined from users table)
+- **user_email**: Email of user (joined from users table)
+- **action**: Action type enum ("create", "update", "delete")
+- **entity_type**: Type of entity modified (table name: "projects", "tasks", "expenses", etc.)
+- **entity_id**: ID of the modified entity
+- **changes**: JSONB object containing:
+  - For **create**: `after` field with created record data
+  - For **update**: `before` and `after` fields with changed data, plus `changed_fields` array
+  - For **delete**: `before` field with deleted record's final state
+- **ip_address**: IP address of user (nullable)
+- **user_agent**: Browser/client user agent (nullable)
+- **created_at**: Timestamp when action occurred
+
+### Audit Log Behavior
+- Logs are immutable (append-only, never updated or deleted)
+- Captured automatically by services when data changes
+- Includes request context (IP, user agent) when available
+- Update logs only created if actual changes detected (excludes `updated_at` field)
+- No duplicate detection - all actions logged independently
+- No automatic cleanup - logs retained indefinitely for compliance
+
+### Entity Types
+Valid entity types correspond to database table names:
+- `projects`: Project records
+- `tasks`: Task records
+- `payment_milestones`: Payment milestone records
+- `expenses`: Expense records
+- `opportunities`: Sales opportunity records
+- `accounts`: Cash account records
+- `cash_transactions`: Cash transaction records
+- `users`: User account records
+
+---
+
+## Report Exports
+
+All export endpoints return CSV files as direct downloads with appropriate Content-Type and Content-Disposition headers.
+
+Permission Required: `dashboards:view` (for all export endpoints)
+
+### GET /api/reports/export/dashboard
+Export dashboard summary as CSV.
+
+Query Parameters:
+- `currency`: Currency code (default: USD)
+
+Response: CSV file download
+- Filename format: `opf_cd_dashboard_summary_YYYY-MM-DD_HHMMSS.csv`
+- Content-Type: `text/csv`
+- Includes: All dashboard KPIs (projects, cash, burn rate, runway, pipeline, expenses, health, alerts)
+
+---
+
+### GET /api/reports/export/projects
+Export projects list as CSV.
+
+Query Parameters:
+- `status`: Filter by status (e.g., "active", "completed")
+- `client`: Filter by client name (partial match)
+
+Response: CSV file download
+- Filename format: `opf_cd_projects_YYYY-MM-DD_HHMMSS.csv`
+- Columns: ID, Name, Client, Status, Start Date, End Date, Contract Value, Currency, Created
+
+---
+
+### GET /api/reports/export/cash-flow
+Export cash flow transactions as CSV.
+
+Query Parameters:
+- `currency`: Currency code (default: USD)
+- `start_date`: Start date filter (YYYY-MM-DD)
+- `end_date`: End date filter (YYYY-MM-DD)
+
+Response: CSV file download
+- Filename format: `opf_cd_cash_flow_YYYY-MM-DD_HHMMSS.csv`
+- Columns: ID, Date, Type, Amount, Currency, Description, Account, Created
+- Includes summary rows: Total Inflows, Total Outflows, Net Cash Flow
+
+---
+
+### GET /api/reports/export/opportunities
+Export sales pipeline opportunities as CSV.
+
+Query Parameters:
+- `stage`: Filter by stage
+- `min_probability`: Minimum close probability (0-100)
+
+Response: CSV file download
+- Filename format: `opf_cd_opportunities_YYYY-MM-DD_HHMMSS.csv`
+- Columns: ID, Name, Client, Stage, Value, Currency, Close Probability (%), Expected Close Date, Created
+- Includes summary rows: Total Pipeline Value, Weighted Value
+
+---
+
+### GET /api/reports/export/expenses
+Export expenses report as CSV.
+
+Query Parameters:
+- `status`: Filter by status (e.g., "due", "paid")
+- `type`: Filter by type
+- `from_date`: Start date (YYYY-MM-DD)
+- `to_date`: End date (YYYY-MM-DD)
+
+Response: CSV file download
+- Filename format: `opf_cd_expenses_YYYY-MM-DD_HHMMSS.csv`
+- Columns: ID, Description, Amount, Currency, Type, Status, Due Date, Project, Created
+- Includes summary by status
+
+---
+
+### GET /api/reports/export/audit-logs
+Export audit logs as CSV.
+
+Query Parameters:
+- `entity_type`: Filter by entity type
+- `action`: Filter by action type
+- `user_id`: Filter by user
+- `from_date`: Start date (YYYY-MM-DD)
+- `to_date`: End date (YYYY-MM-DD)
+- `limit`: Maximum records (default: 500, max: 10000)
+
+Response: CSV file download
+- Filename format: `opf_cd_audit_logs_YYYY-MM-DD_HHMMSS.csv`
+- Columns: ID, User, Action, Entity Type, Entity ID, IP Address, Timestamp, Changes Summary
+
+---
+
+### GET /api/reports/export/project-health
+Export project health scores as CSV.
+
+No query parameters required.
+
+Response: CSV file download
+- Filename format: `opf_cd_project_health_YYYY-MM-DD_HHMMSS.csv`
+- Columns: Project ID, Project Name, Client, PHI Score, Time Score, Payment Score, Blocker Score, Overdue Score, Health Status
+- Only includes active projects
+
+### Export Features
+- **Immediate Download**: Files returned as direct HTTP response (not stored on server)
+- **Timestamp Naming**: All filenames include generation timestamp to prevent overwrites
+- **CSV Format**: Universal compatibility (Excel, Google Sheets, data analysis tools)
+- **Summary Rows**: Financial reports include calculated totals where applicable
+- **Filter Preservation**: Exports respect query parameter filters for targeted reports
+- **No Pagination**: Single file contains all matching records (up to defined limits)
+
+### Usage Examples
+
+Export dashboard summary:
+```
+GET /api/reports/export/dashboard?currency=USD
+```
+
+Export active projects:
+```
+GET /api/reports/export/projects?status=active
+```
+
+Export cash flow for Q1 2026:
+```
+GET /api/reports/export/cash-flow?currency=USD&start_date=2026-01-01&end_date=2026-03-31
+```
+
+Export high-probability opportunities:
+```
+GET /api/reports/export/opportunities?min_probability=70
+```
+
+Export overdue expenses:
+```
+GET /api/reports/export/expenses?status=due&to_date=2026-02-14
+```
+
+Export recent audit logs:
+```
+GET /api/reports/export/audit-logs?from_date=2026-02-01&limit=1000
+```
+
+---

@@ -28,7 +28,7 @@ class UpdateExpenseRequest extends FormRequest
             'currency' => 'sometimes|required|in:UGX,USD',
             'type' => 'sometimes|required|in:recurring,one_off',
             'frequency' => 'nullable|required_if:type,recurring|in:monthly,quarterly,annual',
-            'status' => 'sometimes|nullable|in:due,paid,overdue',
+            'status' => 'sometimes|nullable|in:due,paid',
             'project_id' => 'sometimes|nullable|exists:projects,id',
             'due_date' => 'sometimes|required|date',
         ];
@@ -55,7 +55,7 @@ class UpdateExpenseRequest extends FormRequest
             'type.in' => 'Type must be one of: recurring, one_off.',
             'frequency.required_if' => 'Frequency is required for recurring expenses.',
             'frequency.in' => 'Frequency must be one of: monthly, quarterly, annual.',
-            'status.in' => 'Status must be one of: due, paid, overdue.',
+            'status.in' => 'Status must be one of: due, paid.',
             'project_id.exists' => 'Selected project does not exist.',
             'due_date.required' => 'Due date is required.',
             'due_date.date' => 'Due date must be a valid date.',

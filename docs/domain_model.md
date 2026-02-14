@@ -1,4 +1,7 @@
-# Master Claude Prompt
+
+
+
+p# Master Claude Prompt
 
 You are assisting me to implement an internal business system.
 The authoritative rules are defined in /docs/_truth.md.

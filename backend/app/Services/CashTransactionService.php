@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 /**
  * Cash Transaction Service
@@ -15,6 +16,12 @@ use Illuminate\Support\Facades\DB;
  */
 class CashTransactionService
 {
+    private AuditService $auditService;
+
+    public function __construct(AuditService $auditService)
+    {
+        $this->auditService = $auditService;
+    }
     /**
      * Get all cash transactions, optionally filtered by account.
      * 
@@ -99,9 +106,11 @@ class CashTransactionService
      * Create a new cash transaction.
      * 
      * @param array $data Transaction data (account_id, type, amount, currency, source_type, source_id, transaction_date)
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string, 'transaction_id' => int|null]
      */
-    public function createTransaction(array $data): array
+    public function createTransaction(array $data, int $userId, ?Request $request = null): array
     {
         try {
             $transactionId = DB::table('cash_transactions')->insertGetId([
@@ -114,6 +123,15 @@ class CashTransactionService
                 'transaction_date' => $data['transaction_date'],
                 'created_at' => now(),
             ]);
+
+            // Log audit trail
+            $this->auditService->logCreate(
+                $userId,
+                'cash_transactions',
+                $transactionId,
+                array_merge($data, ['id' => $transactionId]),
+                $request
+            );
 
             return [
                 'success' => true,

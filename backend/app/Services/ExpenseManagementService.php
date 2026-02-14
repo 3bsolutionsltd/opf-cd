@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 /**
@@ -15,6 +16,12 @@ use Carbon\Carbon;
  */
 class ExpenseManagementService
 {
+    private AuditService $auditService;
+
+    public function __construct(AuditService $auditService)
+    {
+        $this->auditService = $auditService;
+    }
     /**
      * Get all expenses ordered by due date.
      * 
@@ -33,6 +40,9 @@ class ExpenseManagementService
 
         $expenses = $query->get()
             ->map(function ($expense) {
+                // Calculate overdue status: due date passed AND not yet paid
+                $isOverdue = $expense->status === 'due' && Carbon::parse($expense->due_date)->lt(Carbon::now());
+                
                 return [
                     'id' => $expense->id,
                     'name' => $expense->name,
@@ -47,6 +57,7 @@ class ExpenseManagementService
                     'created_at' => $expense->created_at,
                     'updated_at' => $expense->updated_at,
                     'is_paid' => $expense->status === 'paid',
+                    'is_overdue' => $isOverdue,
                 ];
             })
             ->toArray();
@@ -70,6 +81,9 @@ class ExpenseManagementService
             return null;
         }
 
+        // Calculate overdue status: due date passed AND not yet paid
+        $isOverdue = $expense->status === 'due' && Carbon::parse($expense->due_date)->lt(Carbon::now());
+        
         return [
             'id' => $expense->id,
             'name' => $expense->name,
@@ -84,6 +98,7 @@ class ExpenseManagementService
             'created_at' => $expense->created_at,
             'updated_at' => $expense->updated_at,
             'is_paid' => $expense->status === 'paid',
+            'is_overdue' => $isOverdue,
         ];
     }
 
@@ -91,9 +106,11 @@ class ExpenseManagementService
      * Create a new expense.
      * 
      * @param array $data Expense data (name, category, amount, currency, type, frequency, status, project_id, due_date)
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string, 'expense_id' => int|null]
      */
-    public function createExpense(array $data): array
+    public function createExpense(array $data, int $userId, ?Request $request = null): array
     {
         try {
             $expenseId = DB::table('expenses')->insertGetId([
@@ -109,6 +126,15 @@ class ExpenseManagementService
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            // Log audit trail
+            $this->auditService->logCreate(
+                $userId,
+                'expenses',
+                $expenseId,
+                array_merge($data, ['id' => $expenseId]),
+                $request
+            );
 
             return [
                 'success' => true,
@@ -131,9 +157,11 @@ class ExpenseManagementService
      * 
      * @param int $expenseId
      * @param array $data Updated expense data
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string]
      */
-    public function updateExpense(int $expenseId, array $data): array
+    public function updateExpense(int $expenseId, array $data, int $userId, ?Request $request = null): array
     {
         // Check if expense exists
         $expense = DB::table('expenses')
@@ -146,6 +174,9 @@ class ExpenseManagementService
                 'message' => 'Expense not found.',
             ];
         }
+
+        // Store before state for audit log
+        $before = (array) $expense;
 
         // Enforce immutability: paid expenses cannot be edited
         if ($expense->status === 'paid') {
@@ -175,6 +206,19 @@ class ExpenseManagementService
                 ->where('id', $expenseId)
                 ->update($updateData);
 
+            // Get after state for audit log
+            $after = (array) DB::table('expenses')->where('id', $expenseId)->first();
+
+            // Log audit trail
+            $this->auditService->logUpdate(
+                $userId,
+                'expenses',
+                $expenseId,
+                $before,
+                $after,
+                $request
+            );
+
             return [
                 'success' => true,
                 'message' => 'Expense updated successfully.',
@@ -193,9 +237,11 @@ class ExpenseManagementService
      * Enforces immutability: Paid expenses cannot be deleted.
      * 
      * @param int $expenseId
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string]
      */
-    public function deleteExpense(int $expenseId): array
+    public function deleteExpense(int $expenseId, int $userId, ?Request $request = null): array
     {
         // Check if expense exists
         $expense = DB::table('expenses')
@@ -209,6 +255,9 @@ class ExpenseManagementService
             ];
         }
 
+        // Store final state for audit log
+        $deletedData = (array) $expense;
+
         // Enforce immutability: paid expenses cannot be deleted
         if ($expense->status === 'paid') {
             return [
@@ -221,6 +270,15 @@ class ExpenseManagementService
             DB::table('expenses')
                 ->where('id', $expenseId)
                 ->delete();
+
+            // Log audit trail
+            $this->auditService->logDelete(
+                $userId,
+                'expenses',
+                $expenseId,
+                $deletedData,
+                $request
+            );
 
             return [
                 'success' => true,
@@ -236,6 +294,7 @@ class ExpenseManagementService
 
     /**
      * Get expense summary by status and currency.
+     * Overdue is calculated from 'due' expenses with past due dates.
      * 
      * @param int|null $projectId Optional project filter
      * @return array ['currencies' => ['USD' => ['due' => float, 'paid' => float, 'overdue' => float, 'total' => float]]]
@@ -243,15 +302,15 @@ class ExpenseManagementService
     public function getExpensesSummary(?int $projectId = null): array
     {
         $query = DB::table('expenses')
-            ->select('status', 'currency', DB::raw('COALESCE(SUM(amount), 0) as total'))
-            ->groupBy('status', 'currency');
+            ->select('status', 'currency', 'due_date', DB::raw('COALESCE(SUM(amount), 0) as total'))
+            ->groupBy('status', 'currency', 'due_date');
 
         if ($projectId !== null) {
             $query->where('project_id', $projectId);
         }
 
         $expenses = $query->get();
-
+        $today = Carbon::now()->startOfDay();
         $currencies = [];
 
         foreach ($expenses as $expense) {
@@ -269,9 +328,16 @@ class ExpenseManagementService
 
             $amount = (float) $expense->total;
             
-            // Only add to status totals if it's a valid status
-            if (in_array($status, ['due', 'paid', 'overdue'])) {
-                $currencies[$currency][$status] = $amount;
+            if ($status === 'paid') {
+                $currencies[$currency]['paid'] += $amount;
+            } elseif ($status === 'due') {
+                // Split 'due' into current and overdue based on due_date
+                $dueDate = Carbon::parse($expense->due_date);
+                if ($dueDate->lt($today)) {
+                    $currencies[$currency]['overdue'] += $amount;
+                } else {
+                    $currencies[$currency]['due'] += $amount;
+                }
             }
             
             $currencies[$currency]['total'] += $amount;
@@ -285,8 +351,8 @@ class ExpenseManagementService
     /**
      * Generate future expense instances for all recurring expenses.
      * 
-     * Looks ahead for the specified number of months and creates due/overdue instances
-     * for recurring expenses based on their frequency.
+     * Looks ahead for the specified number of months and creates instances
+     * for recurring expenses based on their frequency. All new instances start with 'due' status.
      * 
      * @param int $monthsAhead Number of months to generate ahead (default 12)
      * @return array ['success' => bool, 'generated_count' => int, 'message' => string]
@@ -359,8 +425,8 @@ class ExpenseManagementService
                 ->exists();
 
             if (!$exists) {
-                // Determine status based on due date
-                $status = $currentDueDate->lt(Carbon::now()) ? 'overdue' : 'due';
+                // All new recurring expenses start as 'due'
+                // Overdue status is calculated in service layer when retrieving
 
                 DB::table('expenses')->insert([
                     'name' => $baseExpense->name,
@@ -369,7 +435,7 @@ class ExpenseManagementService
                     'currency' => $baseExpense->currency,
                     'type' => 'recurring',
                     'frequency' => $baseExpense->frequency,
-                    'status' => $status,
+                    'status' => 'due',
                     'project_id' => $baseExpense->project_id,
                     'due_date' => $currentDueDate->format('Y-m-d'),
                     'created_at' => now(),
@@ -386,32 +452,10 @@ class ExpenseManagementService
     }
 
     /**
-     * Update overdue status for expenses past their due date.
+     * Note: The updateOverdueExpenses method has been removed.
+     * Overdue status is now calculated dynamically in service layer based on:
+     * is_overdue = (status === 'due' && due_date < current_date)
      * 
-     * @return array ['success' => bool, 'updated_count' => int, 'message' => string]
+     * This follows the principle: "Database stores facts, never conclusions."
      */
-    public function updateOverdueExpenses(): array
-    {
-        try {
-            $updatedCount = DB::table('expenses')
-                ->where('status', 'due')
-                ->where('due_date', '<', Carbon::now()->format('Y-m-d'))
-                ->update([
-                    'status' => 'overdue',
-                    'updated_at' => now(),
-                ]);
-
-            return [
-                'success' => true,
-                'updated_count' => $updatedCount,
-                'message' => "Updated {$updatedCount} expenses to overdue status.",
-            ];
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'updated_count' => 0,
-                'message' => 'Failed to update overdue expenses: ' . $e->getMessage(),
-            ];
-        }
-    }
 }

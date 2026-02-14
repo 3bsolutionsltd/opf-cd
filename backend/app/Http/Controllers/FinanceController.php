@@ -28,8 +28,16 @@ class FinanceController extends Controller
 
     public function getUpcomingExpenses(): JsonResponse
     {
-        return response()->json(
-            $this->expenseService->getUpcomingExpenses()
-        );
+        $expenses = $this->expenseService->getUpcomingExpenses();
+        
+        // Calculate total amount (assuming all expenses in same currency)
+        $totalAmount = array_sum(array_column($expenses, 'amount'));
+        $currency = !empty($expenses) ? $expenses[0]['currency'] : 'UGX';
+        
+        return response()->json([
+            'expenses' => $expenses,
+            'total_amount' => $totalAmount,
+            'currency' => $currency
+        ]);
     }
 }

@@ -17,7 +17,9 @@ use Illuminate\Support\Facades\DB;
 class DashboardSummaryService
 {
     public function __construct(
-        private ProjectHealthService $projectHealthService
+        private ProjectHealthService $projectHealthService,
+        private CashFlowService $cashFlowService,
+        private AlertService $alertService
     ) {}
 
     /**
@@ -98,10 +100,19 @@ class DashboardSummaryService
         // Default currency
         $currency = 'USD';
 
+        // Calculate burn rate and runway
+        $burnRate = $this->cashFlowService->calculateMonthlyBurnRate($currency);
+        $cashRunway = $this->cashFlowService->calculateCashRunway($currency);
+
+        // Get active alerts count
+        $alertCount = $this->alertService->getTotalAlertCount();
+
         return [
             'total_projects' => $totalProjects,
             'active_projects' => $activeProjects,
             'cash_at_hand' => round($cashAtHand, 2),
+            'burn_rate' => $burnRate,
+            'cash_runway_months' => $cashRunway,
             'total_pipeline_value' => round($totalPipelineValue, 2),
             'total_upcoming_expenses' => round($totalUpcomingExpenses, 2),
             'health_green_count' => $greenCount,
@@ -109,6 +120,7 @@ class DashboardSummaryService
             'health_amber_count' => $amberCount,
             'projects_at_risk' => $projectsAtRisk,
             'currency' => $currency,
+            'alert_count' => $alertCount,
         ];
     }
 }

@@ -79,11 +79,20 @@ No service calls.
             <div x-show="expenses.expenses && expenses.expenses.length > 0" class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 p-6">
                 <h3 class="text-lg font-semibold mb-4">Expense Breakdown</h3>
                 <div class="space-y-3">
-                    <template x-for="expense in expenses.expenses" :key="expense.id">
+                    <template x-for="expense in expenses.expenses" :key="expense.expense_id">
                         <div class="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-all">
-                            <div>
-                                <div class="font-medium" x-text="expense.description"></div>
-                                <div class="text-sm text-gray-400" x-text="expense.due_date"></div>
+                            <div class="flex-1">
+                                <div class="font-medium" x-text="expense.name"></div>
+                                <div class="text-sm text-gray-400">
+                                    <span x-text="expense.due_date"></span>
+                                    <span class="ml-2 px-2 py-0.5 rounded text-xs"
+                                          :class="expense.source === 'original' ? 'bg-blue-500/20 text-blue-300' : 'bg-purple-500/20 text-purple-300'"
+                                          x-text="expense.source"></span>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1 capitalize">
+                                    <span x-text="expense.category"></span> • 
+                                    <span x-text="expense.type"></span>
+                                </div>
                             </div>
                             <div class="text-right">
                                 <div class="font-bold text-red-400">

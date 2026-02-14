@@ -46,7 +46,12 @@ class ExpenseController extends Controller
      */
     public function store(StoreExpenseRequest $request): JsonResponse
     {
-        $result = $this->expenseService->createExpense($request->validated());
+        $userId = $request->user()->id;
+        $result = $this->expenseService->createExpense(
+            $request->validated(),
+            $userId,
+            $request
+        );
 
         return response()->json($result, $result['success'] ? 201 : 422);
     }
@@ -73,7 +78,13 @@ class ExpenseController extends Controller
      */
     public function update(UpdateExpenseRequest $request, int $expenseId): JsonResponse
     {
-        $result = $this->expenseService->updateExpense($expenseId, $request->validated());
+        $userId = $request->user()->id;
+        $result = $this->expenseService->updateExpense(
+            $expenseId,
+            $request->validated(),
+            $userId,
+            $request
+        );
 
         return response()->json($result, $result['success'] ? 200 : 422);
     }
@@ -81,9 +92,10 @@ class ExpenseController extends Controller
     /**
      * Delete an expense.
      */
-    public function destroy(int $expenseId): JsonResponse
+    public function destroy(\Illuminate\Http\Request $request, int $expenseId): JsonResponse
     {
-        $result = $this->expenseService->deleteExpense($expenseId);
+        $userId = $request->user()->id;
+        $result = $this->expenseService->deleteExpense($expenseId, $userId, $request);
 
         return response()->json($result, $result['success'] ? 200 : 422);
     }
@@ -145,12 +157,8 @@ class ExpenseController extends Controller
     }
 
     /**
-     * API: Update overdue expenses.
+     * Note: updateOverdue() method removed.
+     * Overdue status is now calculated dynamically in service layer.
+     * No database updates needed - overdue is computed from (status='due' && due_date < now).
      */
-    public function updateOverdue(): JsonResponse
-    {
-        $result = $this->expenseService->updateOverdueExpenses();
-
-        return response()->json($result, $result['success'] ? 200 : 422);
-    }
 }

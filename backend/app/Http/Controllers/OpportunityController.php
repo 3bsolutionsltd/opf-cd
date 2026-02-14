@@ -50,7 +50,12 @@ class OpportunityController extends Controller
      */
     public function store(StoreOpportunityRequest $request): JsonResponse
     {
-        $result = $this->opportunityService->createOpportunity($request->validated());
+        $userId = $request->user()->id;
+        $result = $this->opportunityService->createOpportunity(
+            $request->validated(),
+            $userId,
+            $request
+        );
 
         if ($result['success']) {
             return response()->json($result, 201);
@@ -72,7 +77,13 @@ class OpportunityController extends Controller
      */
     public function update(UpdateOpportunityRequest $request, int $opportunityId): JsonResponse
     {
-        $result = $this->opportunityService->updateOpportunity($opportunityId, $request->validated());
+        $userId = $request->user()->id;
+        $result = $this->opportunityService->updateOpportunity(
+            $opportunityId,
+            $request->validated(),
+            $userId,
+            $request
+        );
 
         if ($result['success']) {
             return response()->json($result, 200);
@@ -84,9 +95,10 @@ class OpportunityController extends Controller
     /**
      * Delete an opportunity.
      */
-    public function destroy(int $opportunityId): JsonResponse
+    public function destroy(\Illuminate\Http\Request $request, int $opportunityId): JsonResponse
     {
-        $result = $this->opportunityService->deleteOpportunity($opportunityId);
+        $userId = $request->user()->id;
+        $result = $this->opportunityService->deleteOpportunity($opportunityId, $userId, $request);
 
         if ($result['success']) {
             return response()->json($result, 200);

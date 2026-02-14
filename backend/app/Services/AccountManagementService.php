@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 /**
  * Account Management Service
@@ -14,6 +15,12 @@ use Illuminate\Support\Facades\DB;
  */
 class AccountManagementService
 {
+    private AuditService $auditService;
+
+    public function __construct(AuditService $auditService)
+    {
+        $this->auditService = $auditService;
+    }
     /**
      * Get all accounts ordered by created date.
      * 
@@ -72,9 +79,11 @@ class AccountManagementService
      * Create a new account.
      * 
      * @param array $data Account data (name, type, currency, opening_balance)
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string, 'account_id' => int|null]
      */
-    public function createAccount(array $data): array
+    public function createAccount(array $data, int $userId, ?Request $request = null): array
     {
         try {
             $accountId = DB::table('accounts')->insertGetId([
@@ -85,6 +94,15 @@ class AccountManagementService
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            // Log audit trail
+            $this->auditService->logCreate(
+                $userId,
+                'accounts',
+                $accountId,
+                array_merge($data, ['id' => $accountId]),
+                $request
+            );
 
             return [
                 'success' => true,
@@ -105,9 +123,11 @@ class AccountManagementService
      * 
      * @param int $accountId
      * @param array $data Updated account data
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string]
      */
-    public function updateAccount(int $accountId, array $data): array
+    public function updateAccount(int $accountId, array $data, int $userId, ?Request $request = null): array
     {
         // Check if account exists
         $account = DB::table('accounts')
@@ -120,6 +140,9 @@ class AccountManagementService
                 'message' => 'Account not found.',
             ];
         }
+
+        // Store before state for audit log
+        $before = (array) $account;
 
         try {
             $updateData = array_filter([
@@ -135,6 +158,19 @@ class AccountManagementService
             DB::table('accounts')
                 ->where('id', $accountId)
                 ->update($updateData);
+
+            // Get after state for audit log
+            $after = (array) DB::table('accounts')->where('id', $accountId)->first();
+
+            // Log audit trail
+            $this->auditService->logUpdate(
+                $userId,
+                'accounts',
+                $accountId,
+                $before,
+                $after,
+                $request
+            );
 
             return [
                 'success' => true,
@@ -152,9 +188,11 @@ class AccountManagementService
      * Delete an account.
      * 
      * @param int $accountId
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string]
      */
-    public function deleteAccount(int $accountId): array
+    public function deleteAccount(int $accountId, int $userId, ?Request $request = null): array
     {
         // Check if account exists
         $account = DB::table('accounts')
@@ -168,10 +206,22 @@ class AccountManagementService
             ];
         }
 
+        // Store final state for audit log
+        $deletedData = (array) $account;
+
         try {
             DB::table('accounts')
                 ->where('id', $accountId)
                 ->delete();
+
+            // Log audit trail
+            $this->auditService->logDelete(
+                $userId,
+                'accounts',
+                $accountId,
+                $deletedData,
+                $request
+            );
 
             return [
                 'success' => true,

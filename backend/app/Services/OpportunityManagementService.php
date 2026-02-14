@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 /**
  * Opportunity Management Service
@@ -14,6 +15,12 @@ use Illuminate\Support\Facades\DB;
  */
 class OpportunityManagementService
 {
+    private AuditService $auditService;
+
+    public function __construct(AuditService $auditService)
+    {
+        $this->auditService = $auditService;
+    }
     /**
      * Get all opportunities ordered by expected close date.
      * 
@@ -92,9 +99,11 @@ class OpportunityManagementService
      * Create a new opportunity.
      * 
      * @param array $data Opportunity data (client, description, estimated_value, probability, stage, source, owner, expected_close_date)
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string, 'opportunity_id' => int|null]
      */
-    public function createOpportunity(array $data): array
+    public function createOpportunity(array $data, int $userId, ?Request $request = null): array
     {
         try {
             $opportunityId = DB::table('opportunities')->insertGetId([
@@ -109,6 +118,15 @@ class OpportunityManagementService
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            // Log audit trail
+            $this->auditService->logCreate(
+                $userId,
+                'opportunities',
+                $opportunityId,
+                array_merge($data, ['id' => $opportunityId]),
+                $request
+            );
 
             return [
                 'success' => true,
@@ -129,9 +147,11 @@ class OpportunityManagementService
      * 
      * @param int $opportunityId
      * @param array $data Updated opportunity data
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string]
      */
-    public function updateOpportunity(int $opportunityId, array $data): array
+    public function updateOpportunity(int $opportunityId, array $data, int $userId, ?Request $request = null): array
     {
         // Check if opportunity exists
         $opportunity = DB::table('opportunities')
@@ -144,6 +164,9 @@ class OpportunityManagementService
                 'message' => 'Opportunity not found.',
             ];
         }
+
+        // Store before state for audit log
+        $before = (array) $opportunity;
 
         try {
             $updateData = array_filter([
@@ -164,6 +187,19 @@ class OpportunityManagementService
                 ->where('id', $opportunityId)
                 ->update($updateData);
 
+            // Get after state for audit log
+            $after = (array) DB::table('opportunities')->where('id', $opportunityId)->first();
+
+            // Log audit trail
+            $this->auditService->logUpdate(
+                $userId,
+                'opportunities',
+                $opportunityId,
+                $before,
+                $after,
+                $request
+            );
+
             return [
                 'success' => true,
                 'message' => 'Opportunity updated successfully.',
@@ -180,9 +216,11 @@ class OpportunityManagementService
      * Delete an opportunity.
      * 
      * @param int $opportunityId
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string]
      */
-    public function deleteOpportunity(int $opportunityId): array
+    public function deleteOpportunity(int $opportunityId, int $userId, ?Request $request = null): array
     {
         // Check if opportunity exists
         $opportunity = DB::table('opportunities')
@@ -196,10 +234,22 @@ class OpportunityManagementService
             ];
         }
 
+        // Store final state for audit log
+        $deletedData = (array) $opportunity;
+
         try {
             DB::table('opportunities')
                 ->where('id', $opportunityId)
                 ->delete();
+
+            // Log audit trail
+            $this->auditService->logDelete(
+                $userId,
+                'opportunities',
+                $opportunityId,
+                $deletedData,
+                $request
+            );
 
             return [
                 'success' => true,

@@ -18,8 +18,8 @@ class RecurringExpenseGeneratorService
     /**
      * Generate future expense instances for all recurring expenses.
      * 
-     * Looks ahead for the specified number of months and creates due/overdue instances
-     * for recurring expenses based on their frequency.
+     * Looks ahead for the specified number of months and creates instances
+     * for recurring expenses based on their frequency. All new instances start with 'due' status.
      * 
      * @param int $monthsAhead Number of months to generate ahead (default 12)
      * @return array ['success' => bool, 'generated_count' => int, 'message' => string]
@@ -92,8 +92,8 @@ class RecurringExpenseGeneratorService
                 ->exists();
 
             if (!$exists) {
-                // Determine status based on due date
-                $status = $currentDueDate->lt(Carbon::now()) ? 'overdue' : 'due';
+                // All new recurring expenses start as 'due'
+                // Overdue status is calculated in service layer when retrieving
 
                 DB::table('expenses')->insert([
                     'name' => $baseExpense->name,
@@ -102,7 +102,7 @@ class RecurringExpenseGeneratorService
                     'currency' => $baseExpense->currency,
                     'type' => 'recurring',
                     'frequency' => $baseExpense->frequency,
-                    'status' => $status,
+                    'status' => 'due',
                     'project_id' => $baseExpense->project_id,
                     'due_date' => $currentDueDate->format('Y-m-d'),
                     'created_at' => now(),
@@ -119,32 +119,10 @@ class RecurringExpenseGeneratorService
     }
 
     /**
-     * Update overdue status for expenses past their due date.
+     * Note: The updateOverdueExpenses method has been removed.
+     * Overdue status is now calculated dynamically in ExpenseManagementService based on:
+     * is_overdue = (status === 'due' && due_date < current_date)
      * 
-     * @return array ['success' => bool, 'updated_count' => int, 'message' => string]
+     * This follows the principle: "Database stores facts, never conclusions."
      */
-    public function updateOverdueExpenses(): array
-    {
-        try {
-            $updatedCount = DB::table('expenses')
-                ->where('status', 'due')
-                ->where('due_date', '<', Carbon::now()->format('Y-m-d'))
-                ->update([
-                    'status' => 'overdue',
-                    'updated_at' => now(),
-                ]);
-
-            return [
-                'success' => true,
-                'updated_count' => $updatedCount,
-                'message' => "Updated {$updatedCount} expenses to overdue status.",
-            ];
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'updated_count' => 0,
-                'message' => 'Failed to update overdue expenses: ' . $e->getMessage(),
-            ];
-        }
-    }
 }

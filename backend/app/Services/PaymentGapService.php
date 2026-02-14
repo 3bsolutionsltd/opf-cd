@@ -62,7 +62,7 @@ class PaymentGapService
         $receivedValue = DB::table('cash_transactions')
             ->join('payment_milestones', function ($join) {
                 $join->on('cash_transactions.source_id', '=', 'payment_milestones.id')
-                     ->where('cash_transactions.source_type', '=', 'project_payment');
+                     ->where('cash_transactions.source_type', '=', 'payment_milestone');
             })
             ->where('payment_milestones.project_id', $projectId)
             ->where('cash_transactions.type', 'inflow')

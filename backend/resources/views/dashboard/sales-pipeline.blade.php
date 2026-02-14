@@ -65,7 +65,7 @@ No service calls.
             <!-- Summary -->
             <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 p-12 text-center">
                 <div class="text-8xl font-black text-purple-400 mb-4">
-                    <span x-text="pipeline.opportunities?.length || 0"></span>
+                    <span x-text="pipeline.opportunity_count || 0"></span>
                 </div>
                 <div class="text-2xl text-gray-300 mb-8">Active Opportunities</div>
                 
@@ -73,27 +73,32 @@ No service calls.
                     <span x-text="pipeline.total_value?.toLocaleString()"></span>
                 </div>
                 <div class="text-gray-400">Total Pipeline Value</div>
+                
+                <div class="mt-6 text-3xl font-bold text-purple-300">
+                    <span x-text="pipeline.weighted_value?.toLocaleString()"></span>
+                </div>
+                <div class="text-sm text-gray-400">Weighted Pipeline Value</div>
             </div>
 
-            <!-- Opportunity List -->
+            <!-- Stage Breakdown -->
             <div x-show="pipeline.opportunities && pipeline.opportunities.length > 0" class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 p-6">
                 <h3 class="text-lg font-semibold mb-4">Pipeline Breakdown</h3>
                 <div class="space-y-3">
-                    <template x-for="opportunity in pipeline.opportunities" :key="opportunity.id">
+                    <template x-for="stage in pipeline.opportunities" :key="stage.stage">
                         <div class="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-all">
-                            <div>
-                                <div class="font-medium" x-text="opportunity.client"></div>
-                                <div class="text-sm text-gray-400" x-text="opportunity.description"></div>
-                                <div class="text-xs text-gray-500 mt-1">
-                                    <span class="capitalize" x-text="opportunity.stage"></span> • 
-                                    <span x-text="opportunity.probability"></span>% probability
+                            <div class="flex-1">
+                                <div class="font-medium capitalize" x-text="stage.stage"></div>
+                                <div class="text-sm text-gray-400">
+                                    <span x-text="stage.count"></span> opportunities
                                 </div>
                             </div>
                             <div class="text-right">
                                 <div class="font-bold text-purple-400">
-                                    <span x-text="opportunity.value?.toLocaleString()"></span>
+                                    <span x-text="stage.total_value?.toLocaleString()"></span>
                                 </div>
-                                <div class="text-sm text-gray-400" x-text="opportunity.currency"></div>
+                                <div class="text-xs text-gray-400">
+                                    Weighted: <span x-text="stage.weighted_value?.toLocaleString()"></span>
+                                </div>
                             </div>
                         </div>
                     </template>

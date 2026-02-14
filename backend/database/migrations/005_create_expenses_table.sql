@@ -17,10 +17,10 @@ CREATE TYPE expense_frequency AS ENUM (
 );
 
 -- Create expense status enum
+-- Note: 'overdue' is computed in service layer (due_date < current_date && status = 'due')
 CREATE TYPE expense_status AS ENUM (
   'due',
-  'paid',
-  'overdue'
+  'paid'
 );
 
 -- Create expenses table

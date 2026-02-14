@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 /**
  * Milestone Management Service
@@ -14,6 +15,12 @@ use Illuminate\Support\Facades\DB;
  */
 class MilestoneManagementService
 {
+    private AuditService $auditService;
+
+    public function __construct(AuditService $auditService)
+    {
+        $this->auditService = $auditService;
+    }
     /**
      * Get all milestones for a project ordered chronologically.
      * 
@@ -81,9 +88,11 @@ class MilestoneManagementService
      * 
      * @param int $projectId
      * @param array $data Milestone data (name, amount, currency, status, due_date)
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string, 'milestone_id' => int|null]
      */
-    public function createMilestone(int $projectId, array $data): array
+    public function createMilestone(int $projectId, array $data, int $userId, ?Request $request = null): array
     {
         try {
             $milestoneId = DB::table('payment_milestones')->insertGetId([
@@ -96,6 +105,15 @@ class MilestoneManagementService
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            // Log audit trail
+            $this->auditService->logCreate(
+                $userId,
+                'payment_milestones',
+                $milestoneId,
+                array_merge($data, ['id' => $milestoneId, 'project_id' => $projectId]),
+                $request
+            );
 
             return [
                 'success' => true,
@@ -116,11 +134,17 @@ class MilestoneManagementService
      * 
      * Enforces immutability: Paid milestones cannot be edited.
      * 
+     * IMPORTANT: If status is being changed to 'paid', this method will fail.
+     * Use ReceiveProjectPaymentService.receive() instead to record the payment
+     * and automatically mark the milestone as paid with proper accounting.
+     * 
      * @param int $milestoneId
-     * @param array $data Updated milestone data
+     * @param array $data Updated milestone data (name, amount, currency, status, due_date)
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string]
      */
-    public function updateMilestone(int $milestoneId, array $data): array
+    public function updateMilestone(int $milestoneId, array $data, int $userId, ?Request $request = null): array
     {
         // Check if milestone exists
         $milestone = DB::table('payment_milestones')
@@ -134,11 +158,23 @@ class MilestoneManagementService
             ];
         }
 
+        // Store before state for audit log
+        $before = (array) $milestone;
+
         // Enforce immutability: paid milestones cannot be edited
         if ($milestone->status === 'paid') {
             return [
                 'success' => false,
                 'message' => 'Cannot edit paid milestones. Financial records are immutable.',
+            ];
+        }
+
+        // PREVENT direct marking as paid - must use ReceiveProjectPaymentService
+        // This ensures cash_transaction is created atomically with status change
+        if (isset($data['status']) && $data['status'] === 'paid') {
+            return [
+                'success' => false,
+                'message' => 'Cannot mark milestone as paid directly. Use the payment recording form to record payment receipt, which will automatically mark the milestone as paid and create the cash transaction.',
             ];
         }
 
@@ -158,6 +194,19 @@ class MilestoneManagementService
                 ->where('id', $milestoneId)
                 ->update($updateData);
 
+            // Get after state for audit log
+            $after = (array) DB::table('payment_milestones')->where('id', $milestoneId)->first();
+
+            // Log audit trail
+            $this->auditService->logUpdate(
+                $userId,
+                'payment_milestones',
+                $milestoneId,
+                $before,
+                $after,
+                $request
+            );
+
             return [
                 'success' => true,
                 'message' => 'Milestone updated successfully.',
@@ -176,9 +225,11 @@ class MilestoneManagementService
      * Enforces immutability: Paid milestones cannot be deleted.
      * 
      * @param int $milestoneId
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string]
      */
-    public function deleteMilestone(int $milestoneId): array
+    public function deleteMilestone(int $milestoneId, int $userId, ?Request $request = null): array
     {
         // Check if milestone exists
         $milestone = DB::table('payment_milestones')
@@ -192,6 +243,9 @@ class MilestoneManagementService
             ];
         }
 
+        // Store final state for audit log
+        $deletedData = (array) $milestone;
+
         // Enforce immutability: paid milestones cannot be deleted
         if ($milestone->status === 'paid') {
             return [
@@ -204,6 +258,15 @@ class MilestoneManagementService
             DB::table('payment_milestones')
                 ->where('id', $milestoneId)
                 ->delete();
+
+            // Log audit trail
+            $this->auditService->logDelete(
+                $userId,
+                'payment_milestones',
+                $milestoneId,
+                $deletedData,
+                $request
+            );
 
             return [
                 'success' => true,

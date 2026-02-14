@@ -39,25 +39,46 @@ No service calls.
                     <p class="text-gray-400">Unified view of all metrics and insights</p>
                 </div>
 
-                <!-- Project Selector -->
-                <div>
-                    <label for="projectFilter" class="block text-sm text-gray-400 mb-2">Filter by Project</label>
-                    <select id="projectFilter" 
-                            x-model="selectedProject" 
-                            @change="loadDashboards()"
-                            class="px-4 py-2 rounded-lg bg-slate-800 border border-white/10 text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors min-w-[250px]">
-                        <option value="" class="bg-slate-800 text-gray-100">All Projects</option>
-                        <template x-for="project in projects" :key="project.id">
-                            <option :value="project.id" x-text="`${project.name} (${project.client})`" class="bg-slate-800 text-gray-100"></option>
-                        </template>
-                    </select>
+                <div class="flex items-center gap-6">
+                    <!-- Export Button -->
+                    <a href="/api/reports/export/dashboard?currency=USD" 
+                       download
+                       class="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600/20 border border-green-500/30 hover:bg-green-600/30 transition-all">
+                        <span class="text-xl">📊</span>
+                        <span class="text-sm font-medium text-green-300">Export CSV</span>
+                    </a>
+
+                    <!-- Alerts Badge -->
+                    <a href="/alerts" class="relative group">
+                        <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800/50 border border-white/10 hover:border-indigo-500/50 transition-all">
+                            <span class="text-xl">🔔</span>
+                            <span class="text-sm font-medium">Alerts</span>
+                            <span x-show="dashboards.summary?.alert_count > 0" 
+                                  class="inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 rounded-full"
+                                  x-text="dashboards.summary.alert_count"></span>
+                        </div>
+                    </a>
+
+                    <!-- Project Selector -->
+                    <div>
+                        <label for="projectFilter" class="block text-sm text-gray-400 mb-2">Filter by Project</label>
+                        <select id="projectFilter" 
+                                x-model="selectedProject" 
+                                @change="loadDashboards()"
+                                class="px-4 py-2 rounded-lg bg-slate-800 border border-white/10 text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors min-w-[250px]">
+                            <option value="" class="bg-slate-800 text-gray-100">All Projects</option>
+                            <template x-for="project in projects" :key="project.id">
+                                <option :value="project.id" x-text="`${project.name} (${project.client})`" class="bg-slate-800 text-gray-100"></option>
+                            </template>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Quick Links (Moved to Top) -->
         <div class="max-w-7xl mx-auto mb-8">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <a href="/projects" class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4 hover:border-indigo-500/30 hover:bg-white/10 transition-all text-center">
                     <div class="text-2xl mb-2">📁</div>
                     <div class="text-sm font-medium">Projects</div>
@@ -74,6 +95,103 @@ No service calls.
                     <div class="text-2xl mb-2">💸</div>
                     <div class="text-sm font-medium">Transactions</div>
                 </a>
+                <a href="/alerts" class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4 hover:border-red-500/30 hover:bg-white/10 transition-all text-center">
+                    <div class="text-2xl mb-2">🔔</div>
+                    <div class="text-sm font-medium">Alerts</div>
+                </a>
+                <a href="/audit-logs" class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4 hover:border-yellow-500/30 hover:bg-white/10 transition-all text-center">
+                    <div class="text-2xl mb-2">📋</div>
+                    <div class="text-sm font-medium">Audit Logs</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Summary KPI Cards -->
+        <div class="max-w-7xl mx-auto mb-8">
+            <h2 class="text-2xl font-bold mb-4">Key Metrics</h2>
+            <div x-show="loading.summary" class="text-center py-12 text-gray-500">
+                Loading summary...
+            </div>
+            <div x-show="!loading.summary && dashboards.summary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Total Projects -->
+                <div class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4">
+                    <div class="text-sm text-gray-400 mb-1">Total Projects</div>
+                    <div class="text-3xl font-bold text-indigo-400" x-text="dashboards.summary.total_projects || 0"></div>
+                    <div class="text-xs text-gray-500 mt-1">
+                        <span x-text="dashboards.summary.active_projects || 0"></span> active
+                    </div>
+                </div>
+
+                <!-- Cash at Hand -->
+                <div class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4">
+                    <div class="text-sm text-gray-400 mb-1">Cash at Hand</div>
+                    <div class="text-3xl font-bold text-green-400">
+                        <span x-text="dashboards.summary.currency || 'USD'"></span>
+                        <span x-text="(dashboards.summary.cash_at_hand || 0).toLocaleString()"></span>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">Current balance</div>
+                </div>
+
+                <!-- Monthly Burn Rate -->
+                <div class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4">
+                    <div class="text-sm text-gray-400 mb-1">Monthly Burn Rate</div>
+                    <div class="text-3xl font-bold text-orange-400">
+                        <span x-text="dashboards.summary.currency || 'USD'"></span>
+                        <span x-text="(dashboards.summary.burn_rate || 0).toLocaleString()"></span>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">Avg monthly outflows</div>
+                </div>
+
+                <!-- Cash Runway -->
+                <div class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4">
+                    <div class="text-sm text-gray-400 mb-1">Cash Runway</div>
+                    <div class="text-3xl font-bold" 
+                         :class="{
+                             'text-green-400': dashboards.summary.cash_runway_months >= 6,
+                             'text-yellow-400': dashboards.summary.cash_runway_months >= 3 && dashboards.summary.cash_runway_months < 6,
+                             'text-red-400': dashboards.summary.cash_runway_months < 3
+                         }">
+                        <span x-text="(dashboards.summary.cash_runway_months || 0).toFixed(1)"></span>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">months remaining</div>
+                </div>
+
+                <!-- Pipeline Value -->
+                <div class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4">
+                    <div class="text-sm text-gray-400 mb-1">Pipeline Value</div>
+                    <div class="text-3xl font-bold text-blue-400">
+                        <span x-text="dashboards.summary.currency || 'USD'"></span>
+                        <span x-text="(dashboards.summary.total_pipeline_value || 0).toLocaleString()"></span>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">Total opportunities</div>
+                </div>
+
+                <!-- Upcoming Expenses -->
+                <div class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4">
+                    <div class="text-sm text-gray-400 mb-1">Upcoming Expenses</div>
+                    <div class="text-3xl font-bold text-purple-400">
+                        <span x-text="dashboards.summary.currency || 'USD'"></span>
+                        <span x-text="(dashboards.summary.total_upcoming_expenses || 0).toLocaleString()"></span>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">Next 90 days</div>
+                </div>
+
+                <!-- Health: Green -->
+                <div class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4">
+                    <div class="text-sm text-gray-400 mb-1">Healthy Projects</div>
+                    <div class="text-3xl font-bold text-green-400" x-text="dashboards.summary.health_green_count || 0"></div>
+                    <div class="text-xs text-gray-500 mt-1">Score ≥ 80</div>
+                </div>
+
+                <!-- Health: At Risk -->
+                <div class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4">
+                    <div class="text-sm text-gray-400 mb-1">At Risk Projects</div>
+                    <div class="text-3xl font-bold text-red-400" x-text="dashboards.summary.projects_at_risk || 0"></div>
+                    <div class="text-xs text-gray-500 mt-1">
+                        <span x-text="dashboards.summary.health_amber_count || 0"></span> amber, 
+                        <span x-text="dashboards.summary.health_red_count || 0"></span> red
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -147,19 +265,24 @@ No service calls.
                         <span x-text="dashboards.paymentGap.currency || 'UGX'"></span> <span x-text="Math.abs(dashboards.paymentGap.gap || 0).toLocaleString()"></span>
                     </div>
                     <div class="text-gray-400">
-                        <span x-show="dashboards.paymentGap.gap > 0" class="text-green-400">Payment ahead of work</span>
-                        <span x-show="dashboards.paymentGap.gap < 0" class="text-red-400">Work ahead of payment</span>
+                        <span x-show="dashboards.paymentGap.gap > 0" class="text-red-400">Client owes you (payment behind work)</span>
+                        <span x-show="dashboards.paymentGap.gap < 0" class="text-green-400">Payment ahead of work</span>
                         <span x-show="dashboards.paymentGap.gap === 0" class="text-blue-400">Perfectly balanced</span>
                     </div>
                 </div>
                 
                 <div x-show="!loading.paymentGap && !selectedProject && dashboards.paymentGapAggregate !== null" class="text-center py-8">
-                    <div class="text-5xl font-bold text-yellow-400 mb-2">
-                        <span x-text="dashboards.paymentGapAggregate.currency || 'UGX'"></span> <span x-text="Math.abs(dashboards.paymentGapAggregate.gap || 0).toLocaleString()"></span>
-                    </div>
-                    <div class="text-gray-400">
-                        Overall Payment Gap (All Projects)
-                    </div>
+                    <div class="text-gray-400 mb-4">Overall Payment Gap (All Projects)</div>
+                    <template x-if="dashboards.paymentGapAggregate && dashboards.paymentGapAggregate.gaps">
+                        <div class="space-y-2">
+                            <template x-for="currency in dashboards.paymentGapAggregate.currencies" :key="currency">
+                                <div class="text-4xl font-bold text-yellow-400">
+                                    <span x-text="currency"></span> 
+                                    <span x-text="Math.abs(dashboards.paymentGapAggregate.gaps[currency] || 0).toLocaleString()"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
                 </div>
                 
                 <div x-show="!loading.paymentGap && !selectedProject && dashboards.paymentGapAggregate === null" class="text-center py-12 text-gray-400">
@@ -185,18 +308,66 @@ No service calls.
                     Loading...
                 </div>
                 
-                <div x-show="!loading.health && selectedProject && dashboards.health.status" class="text-center py-8">
-                    <div class="text-6xl font-bold mb-2"
-                         :class="{
-                             'text-green-400': dashboards.health.status === 'healthy',
-                             'text-yellow-400': dashboards.health.status === 'at-risk',
-                             'text-red-400': dashboards.health.status === 'critical'
-                         }">
-                        <span x-show="dashboards.health.status === 'healthy'">✓</span>
-                        <span x-show="dashboards.health.status === 'at-risk'">⚠</span>
-                        <span x-show="dashboards.health.status === 'critical'">✗</span>
+                <div x-show="!loading.health && selectedProject && dashboards.health.status" class="py-6">
+                    <!-- Header with Status and Score -->
+                    <div class="text-center mb-4">
+                        <div class="text-5xl font-bold mb-2"
+                             :class="{
+                                 'text-green-400': dashboards.health.status === 'healthy',
+                                 'text-yellow-400': dashboards.health.status === 'at-risk',
+                                 'text-red-400': dashboards.health.status === 'critical'
+                             }">
+                            <span x-show="dashboards.health.status === 'healthy'">✓</span>
+                            <span x-show="dashboards.health.status === 'at-risk'">⚠</span>
+                            <span x-show="dashboards.health.status === 'critical'">✗</span>
+                        </div>
+                        <div class="font-bold text-lg mb-1" 
+                             :class="{
+                                 'text-green-300': dashboards.health.status === 'healthy',
+                                 'text-yellow-300': dashboards.health.status === 'at-risk',
+                                 'text-red-300': dashboards.health.status === 'critical'
+                             }"
+                             x-text="dashboards.health.status_label || dashboards.health.status?.replace('-', ' ')"></div>
+                        <div class="text-sm text-gray-400" x-text="dashboards.health.status_description"></div>
+                        <div class="mt-2 text-2xl font-bold"
+                             :class="{
+                                 'text-green-400': dashboards.health.score >= 80,
+                                 'text-yellow-400': dashboards.health.score >= 50 && dashboards.health.score < 80,
+                                 'text-red-400': dashboards.health.score < 50
+                             }">
+                            <span x-text="dashboards.health.score"></span><span class="text-gray-500 text-lg">/100</span>
+                        </div>
                     </div>
-                    <div class="text-gray-400 capitalize" x-text="dashboards.health.status ? dashboards.health.status.replace('-', ' ') : ''"></div>
+                    
+                    <!-- Details Section -->
+                    <div x-show="dashboards.health.details && dashboards.health.details.length > 0" 
+                         class="mt-4 text-left bg-black/20 rounded-lg p-4 border border-white/5">
+                        <div class="text-xs font-semibold text-gray-300 mb-2">ANALYSIS:</div>
+                        <ul class="space-y-1.5">
+                            <template x-for="(detail, index) in dashboards.health.details" :key="index">
+                                <li class="text-sm text-gray-300 flex items-start">
+                                    <span class="text-gray-500 mr-2">•</span>
+                                    <span x-text="detail"></span>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                    
+                    <!-- Recommendations Section -->
+                    <div x-show="dashboards.health.recommendations && dashboards.health.recommendations.length > 0" 
+                         class="mt-3 text-left bg-blue-500/10 rounded-lg p-4 border border-blue-500/20">
+                        <div class="text-xs font-semibold text-blue-300 mb-2 flex items-center">
+                            <span class="mr-1">💡</span> RECOMMENDED ACTIONS:
+                        </div>
+                        <ul class="space-y-1.5">
+                            <template x-for="(rec, index) in dashboards.health.recommendations" :key="index">
+                                <li class="text-sm text-blue-200 flex items-start">
+                                    <span class="text-blue-400 mr-2">→</span>
+                                    <span x-text="rec"></span>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
                 </div>
                 
                 <div x-show="!loading.health && !selectedProject && dashboards.healthAggregate" class="text-center py-8">
@@ -238,27 +409,34 @@ No service calls.
                     Loading...
                 </div>
                 
-                <div x-show="!loading.cashFlow" class="py-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="text-center">
-                            <div class="text-3xl font-bold text-green-400 mb-1">
-                                <span x-text="dashboards.cashFlow.total_inflow?.toLocaleString() || 0"></span>
+                <div x-show="!loading.cashFlow && dashboards.cashFlow.by_currency" class="py-4 space-y-4">
+                    <template x-for="currency in dashboards.cashFlow.currencies" :key="currency">
+                        <div class="border-t border-gray-700 pt-4 first:border-t-0 first:pt-0">
+                            <div class="text-center mb-3">
+                                <span class="text-lg font-bold text-blue-400" x-text="currency"></span>
                             </div>
-                            <div class="text-sm text-gray-400">Total Inflows</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-3xl font-bold text-red-400 mb-1">
-                                <span x-text="dashboards.cashFlow.total_outflow?.toLocaleString() || 0"></span>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-green-400 mb-1">
+                                        <span x-text="dashboards.cashFlow.by_currency[currency].total_inflows?.toLocaleString() || 0"></span>
+                                    </div>
+                                    <div class="text-xs text-gray-400">Inflows</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-red-400 mb-1">
+                                        <span x-text="dashboards.cashFlow.by_currency[currency].total_outflows?.toLocaleString() || 0"></span>
+                                    </div>
+                                    <div class="text-xs text-gray-400">Outflows</div>
+                                </div>
                             </div>
-                            <div class="text-sm text-gray-400">Total Outflows</div>
+                            <div class="mt-2 text-center">
+                                <div class="text-lg font-bold"
+                                     :class="(dashboards.cashFlow.by_currency[currency].net_cash_flow || 0) >= 0 ? 'text-green-400' : 'text-red-400'">
+                                    Net: <span x-text="dashboards.cashFlow.by_currency[currency].net_cash_flow?.toLocaleString() || 0"></span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="mt-4 text-center">
-                        <div class="text-xl font-bold mb-1"
-                             :class="(dashboards.cashFlow.net_flow || 0) >= 0 ? 'text-green-400' : 'text-red-400'">
-                            Net: <span x-text="dashboards.cashFlow.net_flow?.toLocaleString() || 0"></span>
-                        </div>
-                    </div>
+                    </template>
                 </div>
             </div>
 
@@ -334,17 +512,19 @@ No service calls.
                 projects: [],
                 selectedProject: '',
                 dashboards: {
+                    summary: null,
                     progress: null,
                     progressAggregate: null,
-                    paymentGap: { gap: 0, currency: 'UGX' },
+                    paymentGap: { gap_percentage: 0 },
                     paymentGapAggregate: null,
                     health: { status: null },
                     healthAggregate: null,
-                    cashFlow: { total_inflow: 0, total_outflow: 0, net_flow: 0 },
+                    cashFlow: { by_currency: {}, currencies: [] },
                     expenses: { expenses: [], total_amount: 0, currency: 'UGX' },
                     pipeline: { opportunities: [], total_value: 0 }
                 },
                 loading: {
+                    summary: true,
                     progress: true,
                     paymentGap: true,
                     health: true,
@@ -355,6 +535,7 @@ No service calls.
 
                 async init() {
                     await this.loadProjects();
+                    await this.loadSummary();
                     await this.loadGlobalDashboards();
                     await this.loadAggregateDashboards();
                 },
@@ -362,11 +543,27 @@ No service calls.
                 async loadProjects() {
                     try {
                         const response = await fetch('/api/projects', {
-                            headers: { 'Accept': 'application/json' }
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
                         });
                         this.projects = await response.json();
                     } catch (error) {
                         console.error('Error loading projects:', error);
+                    }
+                },
+
+                async loadSummary() {
+                    this.loading.summary = true;
+                    try {
+                        const response = await fetch('/api/dashboard/summary', {
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
+                        });
+                        this.dashboards.summary = await response.json();
+                    } catch (error) {
+                        console.error('Error loading summary:', error);
+                    } finally {
+                        this.loading.summary = false;
                     }
                 },
 
@@ -396,7 +593,8 @@ No service calls.
                     this.loading.progress = true;
                     try {
                         const response = await fetch(`/api/projects/${this.selectedProject}/progress`, {
-                            headers: { 'Accept': 'application/json' }
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
                         });
                         this.dashboards.progress = await response.json();
                     } catch (error) {
@@ -410,7 +608,8 @@ No service calls.
                     this.loading.paymentGap = true;
                     try {
                         const response = await fetch(`/api/projects/${this.selectedProject}/payment-gap`, {
-                            headers: { 'Accept': 'application/json' }
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
                         });
                         this.dashboards.paymentGap = await response.json();
                     } catch (error) {
@@ -424,7 +623,8 @@ No service calls.
                     this.loading.health = true;
                     try {
                         const response = await fetch(`/api/projects/${this.selectedProject}/health`, {
-                            headers: { 'Accept': 'application/json' }
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
                         });
                         this.dashboards.health = await response.json();
                     } catch (error) {
@@ -437,8 +637,13 @@ No service calls.
                 async loadCashFlow() {
                     this.loading.cashFlow = true;
                     try {
-                        const response = await fetch('/api/finance/cash-flow', {
-                            headers: { 'Accept': 'application/json' }
+                        // Use project-specific endpoint if project is selected
+                        const url = this.selectedProject 
+                            ? `/api/projects/${this.selectedProject}/cash-flow`
+                            : '/api/finance/cash-flow';
+                        const response = await fetch(url, {
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
                         });
                         this.dashboards.cashFlow = await response.json();
                     } catch (error) {
@@ -452,7 +657,8 @@ No service calls.
                     this.loading.expenses = true;
                     try {
                         const response = await fetch('/api/finance/expenses/upcoming', {
-                            headers: { 'Accept': 'application/json' }
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
                         });
                         this.dashboards.expenses = await response.json();
                     } catch (error) {
@@ -466,7 +672,8 @@ No service calls.
                     this.loading.pipeline = true;
                     try {
                         const response = await fetch('/api/sales/pipeline', {
-                            headers: { 'Accept': 'application/json' }
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
                         });
                         this.dashboards.pipeline = await response.json();
                     } catch (error) {
@@ -477,7 +684,7 @@ No service calls.
                 },
 
                 async loadAggregateDashboards() {
-                    // Load aggregate data for all projects
+                    // Load aggregate data from backend APIs
                     await Promise.all([
                         this.loadAggregateProgress(),
                         this.loadAggregatePaymentGap(),
@@ -488,21 +695,11 @@ No service calls.
                 async loadAggregateProgress() {
                     this.loading.progress = true;
                     try {
-                        let totalProgress = 0;
-                        let count = 0;
-                        
-                        for (const project of this.projects) {
-                            const response = await fetch(`/api/projects/${project.id}/progress`, {
-                                headers: { 'Accept': 'application/json' }
-                            });
-                            const progress = await response.json();
-                            if (typeof progress === 'number') {
-                                totalProgress += progress;
-                                count++;
-                            }
-                        }
-                        
-                        this.dashboards.progressAggregate = count > 0 ? Math.round(totalProgress / count) : null;
+                        const response = await fetch('/api/dashboard/aggregate/progress', {
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
+                        });
+                        this.dashboards.progressAggregate = await response.json();
                     } catch (error) {
                         console.error('Error loading aggregate progress:', error);
                         this.dashboards.progressAggregate = null;
@@ -514,21 +711,11 @@ No service calls.
                 async loadAggregatePaymentGap() {
                     this.loading.paymentGap = true;
                     try {
-                        let totalGap = 0;
-                        let currency = 'UGX';
-                        
-                        for (const project of this.projects) {
-                            const response = await fetch(`/api/projects/${project.id}/payment-gap`, {
-                                headers: { 'Accept': 'application/json' }
-                            });
-                            const gap = await response.json();
-                            if (gap && gap.gap !== undefined) {
-                                totalGap += gap.gap;
-                                currency = gap.currency || currency;
-                            }
-                        }
-                        
-                        this.dashboards.paymentGapAggregate = { gap: totalGap, currency: currency };
+                        const response = await fetch('/api/dashboard/aggregate/payment-gap', {
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
+                        });
+                        this.dashboards.paymentGapAggregate = await response.json();
                     } catch (error) {
                         console.error('Error loading aggregate payment gap:', error);
                         this.dashboards.paymentGapAggregate = null;
@@ -540,23 +727,11 @@ No service calls.
                 async loadAggregateHealth() {
                     this.loading.health = true;
                     try {
-                        let healthy = 0;
-                        let atRisk = 0;
-                        let critical = 0;
-                        
-                        for (const project of this.projects) {
-                            const response = await fetch(`/api/projects/${project.id}/health`, {
-                                headers: { 'Accept': 'application/json' }
-                            });
-                            const health = await response.json();
-                            if (health && health.status) {
-                                if (health.status === 'healthy') healthy++;
-                                else if (health.status === 'at-risk') atRisk++;
-                                else if (health.status === 'critical') critical++;
-                            }
-                        }
-                        
-                        this.dashboards.healthAggregate = { healthy, atRisk, critical };
+                        const response = await fetch('/api/dashboard/aggregate/health', {
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
+                        });
+                        this.dashboards.healthAggregate = await response.json();
                     } catch (error) {
                         console.error('Error loading aggregate health:', error);
                         this.dashboards.healthAggregate = null;

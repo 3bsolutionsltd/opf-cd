@@ -28,7 +28,7 @@ class StoreExpenseRequest extends FormRequest
             'currency' => 'required|in:UGX,USD',
             'type' => 'required|in:recurring,one_off',
             'frequency' => 'nullable|required_if:type,recurring|in:monthly,quarterly,annual',
-            'status' => 'nullable|in:due,paid,overdue',
+            'status' => 'nullable|in:due,paid',
             'project_id' => 'nullable|exists:projects,id',
             'due_date' => 'required|date',
         ];
@@ -55,7 +55,7 @@ class StoreExpenseRequest extends FormRequest
             'type.in' => 'Type must be one of: recurring, one_off.',
             'frequency.required_if' => 'Frequency is required for recurring expenses.',
             'frequency.in' => 'Frequency must be one of: monthly, quarterly, annual.',
-            'status.in' => 'Status must be one of: due, paid, overdue.',
+            'status.in' => 'Status must be one of: due, paid.',
             'project_id.exists' => 'Selected project does not exist.',
             'due_date.required' => 'Due date is required.',
             'due_date.date' => 'Due date must be a valid date.',

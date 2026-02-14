@@ -39,7 +39,13 @@ class TaskController extends Controller
      */
     public function store(StoreTaskRequest $request, int $projectId): JsonResponse
     {
-        $result = $this->taskManagementService->createTask($projectId, $request->validated());
+        $userId = $request->user()->id;
+        $result = $this->taskManagementService->createTask(
+            $projectId,
+            $request->validated(),
+            $userId,
+            $request
+        );
         
         return response()->json($result, $result['success'] ? 201 : 400);
     }
@@ -67,7 +73,13 @@ class TaskController extends Controller
      */
     public function update(UpdateTaskRequest $request, int $taskId): JsonResponse
     {
-        $result = $this->taskManagementService->updateTask($taskId, $request->validated());
+        $userId = $request->user()->id;
+        $result = $this->taskManagementService->updateTask(
+            $taskId,
+            $request->validated(),
+            $userId,
+            $request
+        );
         
         return response()->json($result, $result['success'] ? 200 : 400);
     }
@@ -77,9 +89,10 @@ class TaskController extends Controller
      * 
      * Thin pass-through to TaskManagementService->deleteTask().
      */
-    public function destroy(int $taskId): JsonResponse
+    public function destroy(\Illuminate\Http\Request $request, int $taskId): JsonResponse
     {
-        $result = $this->taskManagementService->deleteTask($taskId);
+        $userId = $request->user()->id;
+        $result = $this->taskManagementService->deleteTask($taskId, $userId, $request);
         
         return response()->json($result, $result['success'] ? 200 : 400);
     }

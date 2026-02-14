@@ -50,7 +50,12 @@ class AccountController extends Controller
      */
     public function store(StoreAccountRequest $request): JsonResponse
     {
-        $result = $this->accountService->createAccount($request->validated());
+        $userId = $request->user()->id;
+        $result = $this->accountService->createAccount(
+            $request->validated(),
+            $userId,
+            $request
+        );
 
         if ($result['success']) {
             return response()->json($result, 201);
@@ -72,7 +77,13 @@ class AccountController extends Controller
      */
     public function update(UpdateAccountRequest $request, int $accountId): JsonResponse
     {
-        $result = $this->accountService->updateAccount($accountId, $request->validated());
+        $userId = $request->user()->id;
+        $result = $this->accountService->updateAccount(
+            $accountId,
+            $request->validated(),
+            $userId,
+            $request
+        );
 
         if ($result['success']) {
             return response()->json($result, 200);
@@ -84,9 +95,10 @@ class AccountController extends Controller
     /**
      * Delete an account.
      */
-    public function destroy(int $accountId): JsonResponse
+    public function destroy(\Illuminate\Http\Request $request, int $accountId): JsonResponse
     {
-        $result = $this->accountService->deleteAccount($accountId);
+        $userId = $request->user()->id;
+        $result = $this->accountService->deleteAccount($accountId, $userId, $request);
 
         if ($result['success']) {
             return response()->json($result, 200);

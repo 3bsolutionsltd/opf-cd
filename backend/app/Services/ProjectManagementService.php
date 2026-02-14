@@ -3,9 +3,17 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class ProjectManagementService
 {
+    private AuditService $auditService;
+
+    public function __construct(AuditService $auditService)
+    {
+        $this->auditService = $auditService;
+    }
+
     /**
      * Get all projects.
      * 
@@ -62,9 +70,11 @@ class ProjectManagementService
      * Returns success fact with project ID or validation error.
      * 
      * @param array $data
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'project_id' => int|null, 'message' => string]
      */
-    public function createProject(array $data): array
+    public function createProject(array $data, int $userId, ?Request $request = null): array
     {
         try {
             $projectId = DB::table('projects')->insertGetId([
@@ -79,6 +89,15 @@ class ProjectManagementService
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
+
+            // Log audit trail
+            $this->auditService->logCreate(
+                $userId,
+                'projects',
+                $projectId,
+                array_merge($data, ['id' => $projectId]),
+                $request
+            );
 
             return [
                 'success' => true,
@@ -102,9 +121,11 @@ class ProjectManagementService
      * 
      * @param int $projectId
      * @param array $data
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string]
      */
-    public function updateProject(int $projectId, array $data): array
+    public function updateProject(int $projectId, array $data, int $userId, ?Request $request = null): array
     {
         // Check if project exists
         $project = DB::table('projects')->where('id', $projectId)->first();
@@ -114,6 +135,9 @@ class ProjectManagementService
                 'message' => 'Project not found'
             ];
         }
+
+        // Store before state for audit log
+        $before = (array) $project;
 
         // Check if attempting to change contract value
         if (isset($data['contract_value']) && $data['contract_value'] != $project->contract_value) {
@@ -165,6 +189,19 @@ class ProjectManagementService
                 ->where('id', $projectId)
                 ->update($updateData);
 
+            // Get after state for audit log
+            $after = (array) DB::table('projects')->where('id', $projectId)->first();
+
+            // Log audit trail
+            $this->auditService->logUpdate(
+                $userId,
+                'projects',
+                $projectId,
+                $before,
+                $after,
+                $request
+            );
+
             return [
                 'success' => true,
                 'message' => 'Project updated successfully'
@@ -184,9 +221,11 @@ class ProjectManagementService
      * Returns success fact or validation error.
      * 
      * @param int $projectId
+     * @param int $userId
+     * @param Request|null $request
      * @return array ['success' => bool, 'message' => string]
      */
-    public function deleteProject(int $projectId): array
+    public function deleteProject(int $projectId, int $userId, ?Request $request = null): array
     {
         // Check if project exists
         $project = DB::table('projects')->where('id', $projectId)->first();
@@ -196,6 +235,9 @@ class ProjectManagementService
                 'message' => 'Project not found'
             ];
         }
+
+        // Store final state for audit log
+        $deletedData = (array) $project;
 
         // Check for paid milestones
         $hasPaidMilestones = DB::table('payment_milestones')
@@ -214,6 +256,15 @@ class ProjectManagementService
             DB::table('projects')
                 ->where('id', $projectId)
                 ->delete();
+
+            // Log audit trail
+            $this->auditService->logDelete(
+                $userId,
+                'projects',
+                $projectId,
+                $deletedData,
+                $request
+            );
 
             return [
                 'success' => true,

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Services\MilestoneManagementService;
+use App\Services\ReceiveProjectPaymentService;
 use App\Http\Requests\StoreMilestoneRequest;
 use App\Http\Requests\UpdateMilestoneRequest;
+use App\Http\Requests\RecordPaymentRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 
@@ -19,10 +21,14 @@ use Illuminate\View\View;
 class MilestoneController extends Controller
 {
     private MilestoneManagementService $milestoneService;
+    private ReceiveProjectPaymentService $paymentService;
 
-    public function __construct(MilestoneManagementService $milestoneService)
-    {
+    public function __construct(
+        MilestoneManagementService $milestoneService,
+        ReceiveProjectPaymentService $paymentService
+    ) {
         $this->milestoneService = $milestoneService;
+        $this->paymentService = $paymentService;
     }
 
     /**
@@ -50,9 +56,12 @@ class MilestoneController extends Controller
      */
     public function store(StoreMilestoneRequest $request, int $projectId): JsonResponse
     {
+        $userId = $request->user()->id;
         $result = $this->milestoneService->createMilestone(
             $projectId,
-            $request->validated()
+            $request->validated(),
+            $userId,
+            $request
         );
 
         return response()->json($result, $result['success'] ? 201 : 422);
@@ -80,9 +89,12 @@ class MilestoneController extends Controller
      */
     public function update(UpdateMilestoneRequest $request, int $milestoneId): JsonResponse
     {
+        $userId = $request->user()->id;
         $result = $this->milestoneService->updateMilestone(
             $milestoneId,
-            $request->validated()
+            $request->validated(),
+            $userId,
+            $request
         );
 
         return response()->json($result, $result['success'] ? 200 : 422);
@@ -91,9 +103,10 @@ class MilestoneController extends Controller
     /**
      * Delete a milestone.
      */
-    public function destroy(int $milestoneId): JsonResponse
+    public function destroy(\Illuminate\Http\Request $request, int $milestoneId): JsonResponse
     {
-        $result = $this->milestoneService->deleteMilestone($milestoneId);
+        $userId = $request->user()->id;
+        $result = $this->milestoneService->deleteMilestone($milestoneId, $userId, $request);
 
         return response()->json($result, $result['success'] ? 200 : 422);
     }
@@ -142,5 +155,26 @@ class MilestoneController extends Controller
             'success' => true,
             'summary' => $summary,
         ]);
+    }
+
+    /**
+     * Record receipt of a project payment.
+     * 
+     * This is the ONLY way to mark a milestone as paid.
+     * Atomically creates cash_transaction and updates milestone status.
+     * 
+     * Required fields:
+     * - account_id: Which account received the funds
+     * - transaction_date: When payment was received (YYYY-MM-DD)
+     */
+    public function recordPayment(RecordPaymentRequest $request, int $milestoneId): JsonResponse
+    {
+        $result = $this->paymentService->receive(
+            $milestoneId,
+            $request->validated()['account_id'],
+            $request->validated()['transaction_date']
+        );
+
+        return response()->json($result, $result['success'] ? 200 : 422);
     }
 }

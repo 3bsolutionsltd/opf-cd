@@ -83,6 +83,29 @@ PHI Score =
 (blocker_score × 0.2) +
 (overdue_score × 0.2)
 
+### Factor Calculations
+
+**Time Score (30%):**
+- Expected Progress = (Days Elapsed / Total Project Days) × 100
+- Time Score = (Actual Progress / Expected Progress) × 100
+- Clamped to 0-100
+- If project past end date and incomplete, score penalized
+
+**Payment Score (30%):**
+- If Payment Gap > 0 (owed money): Score = 100 - |Payment Gap %|
+- If Payment Gap < 0 (ahead on payment): Score = 100
+- Payment Gap from Payment Gap formula above
+
+**Blocker Score (20%):**
+- Blocker Score = 100 - (Blocked Tasks Count × 10)
+- Penalty: 10 points per blocked task
+- Minimum score: 0
+
+**Overdue Score (20%):**
+- Overdue Score = 100 - (Overdue Milestones Count × 15)
+- Penalty: 15 points per overdue milestone (past due_date and status != 'paid')
+- Minimum score: 0
+
 Health Bands:
 - Green ≥ 80
 - Yellow 50–79

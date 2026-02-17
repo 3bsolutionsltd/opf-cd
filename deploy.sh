@@ -129,6 +129,9 @@ log_success "Code updated to latest commit: ${COMMIT_SHORT}"
 RELEASE_DIR="${RELEASES_DIR}/release_${TIMESTAMP}"
 log_info "Creating new release: ${RELEASE_DIR}"
 
+# Create release directory first
+mkdir -p "${RELEASE_DIR}"
+
 # Copy backend to new release directory (using backend_old_manual_deployment as source)
 # Copy directly to backend name (avoids needing to rename)
 cp -R backend_old_manual_deployment "${RELEASE_DIR}/backend"

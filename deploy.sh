@@ -117,6 +117,9 @@ git stash > /dev/null 2>&1 || true
 git fetch origin ${BRANCH}
 git reset --hard origin/${BRANCH}
 
+# Self-update: Make sure deploy.sh is executable
+chmod +x deploy.sh
+
 log_success "Code updated to latest commit: ${COMMIT_SHORT}"
 
 ###############################################################################

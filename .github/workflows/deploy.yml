@@ -63,6 +63,9 @@ jobs:
           script: |
             echo "🚀 Starting deployment..."
             cd ${{ secrets.PROD_DEPLOY_PATH }}
+            git fetch origin master
+            git reset --hard origin/master
+            chmod +x deploy.sh
             bash deploy.sh
       
       - name: ✅ Deployment Complete

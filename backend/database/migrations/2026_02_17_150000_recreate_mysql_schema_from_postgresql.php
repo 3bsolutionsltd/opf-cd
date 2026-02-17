@@ -329,23 +329,8 @@ return new class extends Migration
             $table->index(['entity_type', 'entity_id', 'created_at'], 'idx_audit_entity_time');
         });
 
-        //=================================================================
-        // Laravel Default Tables
-        //=================================================================
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
-        });
-
-        Schema::create('sessions', function (Blueprint $table) {
-            $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
-            $table->string('ip_address', 45)->nullable();
-            $table->text('user_agent')->nullable();
-            $table->longText('payload');
-            $table->integer('last_activity')->index();
-        });
+        // Laravel default tables (users, cache, jobs, password_reset_tokens, sessions)
+        // are handled by Laravel's default migrations
     }
 
     /**
@@ -358,8 +343,7 @@ return new class extends Migration
             return;
         }
 
-        Schema::dropIfExists('sessions');
-        Schema::dropIfExists('password_reset_tokens');
+        // Drop only the tables we created (not Laravel default tables)
         Schema::dropIfExists('audit_logs');
         Schema::dropIfExists('alerts');
         Schema::dropIfExists('permissions');

@@ -325,8 +325,8 @@ return new class extends Migration
             $table->index('user_id', 'idx_audit_user');
             $table->index(['entity_type', 'entity_id'], 'idx_audit_entity');
             $table->index('action', 'idx_audit_action');
-            $table->index(DB::raw('created_at DESC'), 'idx_audit_created');
-            $table->index([DB::raw('entity_type'), DB::raw('entity_id'), DB::raw('created_at DESC')], 'idx_audit_entity_time');
+            $table->index('created_at', 'idx_audit_created');
+            $table->index(['entity_type', 'entity_id', 'created_at'], 'idx_audit_entity_time');
         });
 
         //=================================================================

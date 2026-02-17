@@ -149,7 +149,7 @@ log_success "Release directory created"
 
 log_info "Installing Composer dependencies..."
 
-cd "${RELEASE_DIR}"
+cd "${RELEASE_DIR}/backend"
 composer install --no-interaction --optimize-autoloader --no-dev --ignore-platform-reqs --quiet
 
 if [ $? -ne 0 ]; then
@@ -167,15 +167,15 @@ log_success "Dependencies installed"
 log_info "Linking shared resources..."
 
 # Remove release storage and link to shared
-rm -rf "${RELEASE_DIR}/storage"
-ln -s "${SHARED_DIR}/storage" "${RELEASE_DIR}/storage"
+rm -rf "${RELEASE_DIR}/backend/storage"
+ln -s "${SHARED_DIR}/storage" "${RELEASE_DIR}/backend/storage"
 
 # Link .env from shared (or current if exists)
 if [ -f "${SHARED_DIR}/.env" ]; then
-    ln -s "${SHARED_DIR}/.env" "${RELEASE_DIR}/.env"
-elif [ -f "${CURRENT_DIR}/.env" ]; then
-    cp "${CURRENT_DIR}/.env" "${SHARED_DIR}/.env"
-    ln -s "${SHARED_DIR}/.env" "${RELEASE_DIR}/.env"
+    ln -s "${SHARED_DIR}/.env" "${RELEASE_DIR}/backend/.env"
+elif [ -f "${CURRENT_DIR}/backend/.env" ]; then
+    cp "${CURRENT_DIR}/backend/.env" "${SHARED_DIR}/.env"
+    ln -s "${SHARED_DIR}/.env" "${RELEASE_DIR}/backend/.env"
 else
     log_warning ".env not found in shared or current, you'll need to create it"
 fi
@@ -188,7 +188,7 @@ log_success "Shared resources linked"
 
 log_info "Running database migrations..."
 
-cd "${RELEASE_DIR}"
+cd "${RELEASE_DIR}/backend"
 php artisan migrate --force --no-interaction
 
 if [ $? -ne 0 ]; then
@@ -203,7 +203,7 @@ log_success "Migrations completed"
 
 log_info "Optimizing application..."
 
-cd "${RELEASE_DIR}"
+cd "${RELEASE_DIR}/backend"
 
 # Clear old caches
 php artisan config:clear --quiet
@@ -224,7 +224,7 @@ log_success "Application optimized"
 
 log_info "Setting file permissions..."
 
-cd "${RELEASE_DIR}"
+cd "${RELEASE_DIR}/backend"
 chmod -R 755 bootstrap/cache
 find "${SHARED_DIR}/storage" -type d -exec chmod 755 {} \;
 find "${SHARED_DIR}/storage" -type f -exec chmod 644 {} \;
@@ -243,9 +243,9 @@ if [ -L "${CURRENT_DIR}" ]; then
     log_info "Previous release: ${PREVIOUS_RELEASE}"
 fi
 
-# Atomic switch - remove and create new symlink
+# Atomic switch - remove and create new symlink to backend subdirectory
 rm -f "${CURRENT_DIR}"
-ln -s "${RELEASE_DIR}" "${CURRENT_DIR}"
+ln -s "${RELEASE_DIR}/backend" "${CURRENT_DIR}"
 
 log_success "Switched to new release"
 

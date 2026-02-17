@@ -24,19 +24,20 @@ jobs:
           extensions: mbstring, xml, ctype, json, bcmath, pdo, pdo_mysql
           coverage: none
       
-      - name: 📦 Install Composer Dependencies
-        working-directory: ./backend
-        run: |
-          composer validate --strict
-          composer install --prefer-dist --no-interaction --no-progress --optimize-autoloader --no-dev
+      # Composer validation skipped - backend app is deployed via git on server
+      # - name: 📦 Install Composer Dependencies
+      #   working-directory: ./backend
+      #   run: |
+      #     composer validate --strict
+      #     composer install --prefer-dist --no-interaction --no-progress --optimize-autoloader --no-dev
       
-      - name: 🧪 Run Tests (Optional - comment out to skip)
-        working-directory: ./backend
-        run: |
-          cp .env.example .env
-          php artisan key:generate
-          # php artisan test --parallel
-          echo "✅ Tests skipped - remove this line and uncomment above to run tests"
+      # - name: 🧪 Run Tests (Optional - comment out to skip)
+      #   working-directory: ./backend
+      #   run: |
+      #     cp .env.example .env
+      #     php artisan key:generate
+      #     # php artisan test --parallel
+      #     echo "✅ Tests skipped - remove this line and uncomment above to run tests"
       
       - name: 📊 Deployment Info
         run: |

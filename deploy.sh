@@ -129,8 +129,15 @@ log_success "Code updated to latest commit: ${COMMIT_SHORT}"
 RELEASE_DIR="${RELEASES_DIR}/release_${TIMESTAMP}"
 log_info "Creating new release: ${RELEASE_DIR}"
 
-# Copy backend to new release directory
-cp -R backend "${RELEASE_DIR}"
+# Copy backend to new release directory (using backend_old_manual_deployment as source)
+cp -R backend_old_manual_deployment "${RELEASE_DIR}"
+# Rename to backend for consistency
+mv "${RELEASE_DIR}/backend_old_manual_deployment" "${RELEASE_DIR}/backend"
+
+# Copy latest migrations from backend/database/migrations to release
+if [ -d "backend/database/migrations" ]; then
+    cp backend/database/migrations/*.php "${RELEASE_DIR}/backend/database/migrations/" 2>/dev/null || true
+fi
 
 log_success "Release directory created"
 

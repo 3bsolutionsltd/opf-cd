@@ -237,7 +237,6 @@ return new class extends Migration
             $table->date('effective_date')->unique();
             $table->timestampTz('created_at')->useCurrent();
             
-            $table->unique('effective_date');
             $table->index('created_at');
         });
         

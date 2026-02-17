@@ -138,7 +138,7 @@ log_success "Release directory created"
 log_info "Installing Composer dependencies..."
 
 cd "${RELEASE_DIR}"
-composer install --no-interaction --optimize-autoloader --no-dev --quiet
+composer install --no-interaction --optimize-autoloader --no-dev --ignore-platform-reqs --quiet
 
 if [ $? -ne 0 ]; then
     log_error "Composer install failed"

@@ -186,16 +186,19 @@ log_success "Shared resources linked"
 # Run Migrations
 ###############################################################################
 
-log_info "Running database migrations..."
+# Migrations disabled temporarily - will run migrate:fresh manually via SSH
+# log_info "Running database migrations..."
+# 
+# cd "${RELEASE_DIR}/backend"
+# php artisan migrate --force --no-interaction
+# 
+# if [ $? -ne 0 ]; then
+#     log_warning "Migration failed, but continuing..."
+# fi
+# 
+# log_success "Migrations completed"
 
-cd "${RELEASE_DIR}/backend"
-php artisan migrate --force --no-interaction
-
-if [ $? -ne 0 ]; then
-    log_warning "Migration failed, but continuing..."
-fi
-
-log_success "Migrations completed"
+log_info "Migrations skipped (will run manually)"
 
 ###############################################################################
 # Optimize Application

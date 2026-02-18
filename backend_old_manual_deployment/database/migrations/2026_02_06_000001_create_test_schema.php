@@ -14,6 +14,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip this migration if not using PostgreSQL
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+        
         // Drop Laravel's default tables first (they conflict with our schema)
         Schema::dropIfExists('sessions');
         Schema::dropIfExists('password_reset_tokens');
@@ -86,6 +91,11 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Skip this migration if not using PostgreSQL
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+        
         // Drop all tables
         $tables = [
             'permissions',

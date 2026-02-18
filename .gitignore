@@ -1,0 +1,33 @@
+# Laravel
+/backend_old_manual_deployment/node_modules
+/backend_old_manual_deployment/public/hot
+/backend_old_manual_deployment/public/storage
+/backend_old_manual_deployment/storage/*.key
+/backend_old_manual_deployment/vendor
+/backend_old_manual_deployment/.env
+/backend_old_manual_deployment/.phpunit.result.cache
+/backend_old_manual_deployment/Homestead.json
+/backend_old_manual_deployment/Homestead.yaml
+/backend_old_manual_deployment/npm-debug.log
+/backend_old_manual_deployment/yarn-error.log
+
+# Deployment
+/backend
+
+# IDE
+/.idea
+/.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+create_admin_seeder.php
+create_roles_permissions_seeder.php
+SampleDataSeeder.php

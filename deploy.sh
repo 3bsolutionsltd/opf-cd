@@ -136,12 +136,7 @@ mkdir -p "${RELEASE_DIR}"
 # Copy directly to backend name (avoids needing to rename)
 cp -R backend_old_manual_deployment "${RELEASE_DIR}/backend"
 
-# Copy latest migrations from backend/database/migrations to release
-if [ -d "backend/database/migrations" ]; then
-    cp backend/database/migrations/*.php "${RELEASE_DIR}/backend/database/migrations/" 2>/dev/null || true
-fi
-
-log_success "Release directory created"
+log_success "Release directory created (all migrations included)"
 
 ###############################################################################
 # Install Dependencies
@@ -249,6 +244,19 @@ fi
 # Atomic switch - remove and create new symlink to backend subdirectory
 rm -f "${CURRENT_DIR}"
 ln -s "${RELEASE_DIR}/backend" "${CURRENT_DIR}"
+
+# Ensure backend symlink exists at repository root (points to current)
+if [ ! -L "${BASE_DIR}/backend" ]; then
+    log_info "Creating backend symlink at repository root..."
+    ln -s current "${BASE_DIR}/backend"
+    log_success "Backend symlink created: backend -> current"
+elif [ ! -e "${BASE_DIR}/backend" ]; then
+    # Symlink exists but is broken - recreate it
+    log_warning "Backend symlink broken, recreating..."
+    rm -f "${BASE_DIR}/backend"
+    ln -s current "${BASE_DIR}/backend"
+    log_success "Backend symlink recreated"
+fi
 
 log_success "Switched to new release"
 

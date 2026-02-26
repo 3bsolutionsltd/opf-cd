@@ -159,9 +159,9 @@ No service calls.
                 <!-- Pipeline Value -->
                 <div class="rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 p-4">
                     <div class="text-sm text-gray-400 mb-1">Pipeline Value</div>
-                    <div class="text-3xl font-bold text-blue-400">
-                        <span x-text="dashboards.summary.currency || 'USD'"></span>
-                        <span x-text="(dashboards.summary.total_pipeline_value || 0).toLocaleString()"></span>
+                    <div class="text-2xl font-bold text-blue-400">
+                        <div>UGX <span x-text="(dashboards.summary.pipeline_ugx || 0).toLocaleString()"></span></div>
+                        <div class="text-xl">USD <span x-text="(dashboards.summary.pipeline_usd || 0).toLocaleString()"></span></div>
                     </div>
                     <div class="text-xs text-gray-500 mt-1">Total opportunities</div>
                 </div>
@@ -495,9 +495,14 @@ No service calls.
                         </div>
                         <div class="text-gray-400">Active Opportunities</div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-gray-200">
-                            <span x-text="dashboards.pipeline.total_value?.toLocaleString() || 0"></span>
+                    <div class="text-center space-y-2">
+                        <div x-show="dashboards.pipeline.by_currency">
+                            <div class="text-xl font-bold text-gray-200">
+                                UGX <span x-text="dashboards.pipeline.by_currency?.UGX?.total_value?.toLocaleString() || 0"></span>
+                            </div>
+                            <div class="text-lg font-bold text-gray-300">
+                                USD <span x-text="dashboards.pipeline.by_currency?.USD?.total_value?.toLocaleString() || 0"></span>
+                            </div>
                         </div>
                         <div class="text-sm text-gray-400">Total Pipeline Value</div>
                     </div>

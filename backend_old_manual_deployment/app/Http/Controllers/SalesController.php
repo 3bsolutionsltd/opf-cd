@@ -23,7 +23,8 @@ class SalesController extends Controller
             'opportunities' => $forecast['by_stage'], // Array of stages with counts
             'total_value' => $forecast['total_pipeline_value'],
             'weighted_value' => $forecast['weighted_pipeline_value'],
-            'opportunity_count' => $forecast['opportunity_count']
+            'opportunity_count' => $forecast['opportunity_count'],
+            'by_currency' => $forecast['by_currency']
         ]);
     }
 }

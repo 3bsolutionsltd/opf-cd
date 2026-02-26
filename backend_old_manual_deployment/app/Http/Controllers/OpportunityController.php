@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOpportunityRequest;
 use App\Http\Requests\UpdateOpportunityRequest;
+use App\Http\Requests\CreateProjectFromOpportunityRequest;
 use App\Services\OpportunityManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
@@ -13,6 +14,8 @@ use Illuminate\View\View;
  * 
  * Thin pass-through controller - NO transformations, NO calculations.
  * Calls ONE service (OpportunityManagementService).
+ * 
+ * User ID is injected by InjectAuthenticatedUserId middleware.
  */
 class OpportunityController extends Controller
 {
@@ -50,7 +53,7 @@ class OpportunityController extends Controller
      */
     public function store(StoreOpportunityRequest $request): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->opportunityService->createOpportunity(
             $request->validated(),
             $userId,
@@ -73,11 +76,19 @@ class OpportunityController extends Controller
     }
 
     /**
+     * Display projects for an opportunity.
+     */
+    public function showProjects(int $opportunityId): View
+    {
+        return view('opportunities.projects', ['opportunityId' => $opportunityId]);
+    }
+
+    /**
      * Update an existing opportunity.
      */
     public function update(UpdateOpportunityRequest $request, int $opportunityId): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->opportunityService->updateOpportunity(
             $opportunityId,
             $request->validated(),
@@ -97,7 +108,7 @@ class OpportunityController extends Controller
      */
     public function destroy(\Illuminate\Http\Request $request, int $opportunityId): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->opportunityService->deleteOpportunity($opportunityId, $userId, $request);
 
         if ($result['success']) {
@@ -131,5 +142,41 @@ class OpportunityController extends Controller
         }
 
         return response()->json($opportunity, 200);
+    }
+
+    /**
+     * API: Create a project from an opportunity (manual creation).
+     * 
+     * Supports multi-phase opportunities where multiple projects
+     * can be created from a single opportunity.
+     */
+    public function createProject(CreateProjectFromOpportunityRequest $request, int $opportunityId): JsonResponse
+    {
+        $userId = $request->get('authenticated_user_id');
+        $result = $this->opportunityService->createProjectFromOpportunity(
+            $opportunityId,
+            $request->validated(),
+            $userId,
+            $request
+        );
+
+        if ($result['success']) {
+            return response()->json($result, 201);
+        }
+
+        return response()->json($result, 500);
+    }
+
+    /**
+     * API: Get all projects linked to an opportunity.
+     */
+    public function getProjects(int $opportunityId): JsonResponse
+    {
+        $projects = $this->opportunityService->getProjectsForOpportunity($opportunityId);
+        
+        return response()->json([
+            'success' => true,
+            'projects' => $projects
+        ], 200);
     }
 }

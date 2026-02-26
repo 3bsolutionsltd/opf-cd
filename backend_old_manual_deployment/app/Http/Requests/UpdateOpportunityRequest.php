@@ -31,6 +31,7 @@ class UpdateOpportunityRequest extends FormRequest
             'client' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|required|string|max:255',
             'estimated_value' => 'sometimes|required|numeric|min:0',
+            'currency' => 'sometimes|required|string|in:UGX,USD',
             'probability' => 'sometimes|required|numeric|min:0|max:100',
             'stage' => 'sometimes|required|in:lead,qualified,proposal,negotiation,won,lost',
             'source' => 'sometimes|required|string|max:100',

@@ -122,6 +122,7 @@ Route::middleware(['check.permission:expenses,edit'])->group(function () {
 // Opportunities management routes (protected)
 Route::middleware(['check.permission:opportunities,view'])->group(function () {
     Route::get('/opportunities', [OpportunityController::class, 'index'])->name('opportunities.index');
+    Route::get('/opportunities/{opportunityId}/projects', [OpportunityController::class, 'showProjects'])->name('opportunities.projects');
 });
 
 Route::middleware(['check.permission:opportunities,create'])->group(function () {

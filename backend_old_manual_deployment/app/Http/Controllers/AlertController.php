@@ -3,24 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Services\AlertService;
-use App\Services\SessionService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * AlertController
  * 
  * Thin pass-through controller for alert operations.
  * All business logic in AlertService.
+ * 
+ * User ID is injected by InjectAuthenticatedUserId middleware.
  */
 class AlertController extends Controller
 {
     private AlertService $alertService;
-    private SessionService $sessionService;
 
-    public function __construct(AlertService $alertService, SessionService $sessionService)
+    public function __construct(AlertService $alertService)
     {
         $this->alertService = $alertService;
-        $this->sessionService = $sessionService;
     }
 
     /**
@@ -71,13 +71,14 @@ class AlertController extends Controller
     /**
      * Dismiss an alert
      * 
+     * @param Request $request
      * @param int $alertId
      * @return JsonResponse
      */
-    public function dismiss(int $alertId): JsonResponse
+    public function dismiss(Request $request, int $alertId): JsonResponse
     {
         try {
-            $userId = $this->sessionService->getCurrentUserId();
+            $userId = $request->get('authenticated_user_id');
             
             if (!$userId) {
                 return response()->json([

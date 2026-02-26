@@ -46,7 +46,7 @@ class ExpenseController extends Controller
      */
     public function store(StoreExpenseRequest $request): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->expenseService->createExpense(
             $request->validated(),
             $userId,
@@ -78,7 +78,7 @@ class ExpenseController extends Controller
      */
     public function update(UpdateExpenseRequest $request, int $expenseId): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->expenseService->updateExpense(
             $expenseId,
             $request->validated(),
@@ -94,7 +94,7 @@ class ExpenseController extends Controller
      */
     public function destroy(\Illuminate\Http\Request $request, int $expenseId): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->expenseService->deleteExpense($expenseId, $userId, $request);
 
         return response()->json($result, $result['success'] ? 200 : 422);

@@ -56,7 +56,7 @@ class MilestoneController extends Controller
      */
     public function store(StoreMilestoneRequest $request, int $projectId): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->milestoneService->createMilestone(
             $projectId,
             $request->validated(),
@@ -89,7 +89,7 @@ class MilestoneController extends Controller
      */
     public function update(UpdateMilestoneRequest $request, int $milestoneId): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->milestoneService->updateMilestone(
             $milestoneId,
             $request->validated(),
@@ -105,7 +105,7 @@ class MilestoneController extends Controller
      */
     public function destroy(\Illuminate\Http\Request $request, int $milestoneId): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->milestoneService->deleteMilestone($milestoneId, $userId, $request);
 
         return response()->json($result, $result['success'] ? 200 : 422);

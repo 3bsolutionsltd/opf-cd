@@ -39,7 +39,7 @@ class TaskController extends Controller
      */
     public function store(StoreTaskRequest $request, int $projectId): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->taskManagementService->createTask(
             $projectId,
             $request->validated(),
@@ -73,7 +73,7 @@ class TaskController extends Controller
      */
     public function update(UpdateTaskRequest $request, int $taskId): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->taskManagementService->updateTask(
             $taskId,
             $request->validated(),
@@ -91,7 +91,7 @@ class TaskController extends Controller
      */
     public function destroy(\Illuminate\Http\Request $request, int $taskId): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->taskManagementService->deleteTask($taskId, $userId, $request);
         
         return response()->json($result, $result['success'] ? 200 : 400);

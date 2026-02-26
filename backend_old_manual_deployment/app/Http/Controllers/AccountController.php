@@ -50,7 +50,7 @@ class AccountController extends Controller
      */
     public function store(StoreAccountRequest $request): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->accountService->createAccount(
             $request->validated(),
             $userId,
@@ -77,7 +77,7 @@ class AccountController extends Controller
      */
     public function update(UpdateAccountRequest $request, int $accountId): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->accountService->updateAccount(
             $accountId,
             $request->validated(),
@@ -97,7 +97,7 @@ class AccountController extends Controller
      */
     public function destroy(\Illuminate\Http\Request $request, int $accountId): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->accountService->deleteAccount($accountId, $userId, $request);
 
         if ($result['success']) {

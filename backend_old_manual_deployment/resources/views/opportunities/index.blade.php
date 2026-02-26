@@ -19,7 +19,7 @@
 <body class="min-h-full bg-slate-950 text-gray-100">
     <div class="min-h-screen p-8" x-data="opportunitiesIndex()">
         <!-- Header -->
-        <div class="max-w-7xl mx-auto mb-8">
+        <div class="w-full mx-auto mb-8 px-4">
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="text-3xl font-bold">Opportunities</h1>
@@ -37,61 +37,61 @@
         </div>
 
         <!-- Loading State -->
-        <div x-show="loading" class="max-w-7xl mx-auto text-center py-12">
+        <div x-show="loading" class="w-full mx-auto text-center py-12">
             <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
             <p class="mt-4 text-gray-400">Loading opportunities...</p>
         </div>
 
         <!-- Error State -->
-        <div x-show="error" class="max-w-7xl mx-auto">
+        <div x-show="error" class="w-full mx-auto px-4">
             <div class="rounded-xl bg-red-500/10 border border-red-500/30 p-6">
                 <p class="text-red-400" x-text="error"></p>
             </div>
         </div>
 
         <!-- Delete Error Message -->
-        <div x-show="deleteError" class="max-w-7xl mx-auto mb-6">
+        <div x-show="deleteError" class="w-full mx-auto mb-6 px-4">
             <div class="rounded-xl bg-red-500/10 border border-red-500/30 p-4">
                 <p class="text-red-400" x-text="deleteError"></p>
             </div>
         </div>
 
         <!-- Delete Success Message -->
-        <div x-show="deleteSuccess" class="max-w-7xl mx-auto mb-6">
+        <div x-show="deleteSuccess" class="w-full mx-auto mb-6 px-4">
             <div class="rounded-xl bg-green-500/10 border border-green-500/30 p-4">
                 <p class="text-green-400" x-text="deleteSuccess"></p>
             </div>
         </div>
 
         <!-- Opportunities Table -->
-        <div x-show="!loading && !error" class="max-w-7xl mx-auto">
-            <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 overflow-hidden">
-                <table class="w-full">
+        <div x-show="!loading && !error" class="w-full mx-auto px-4">
+            <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 overflow-x-auto">
+                <table class="w-full min-w-max">
                     <thead class="bg-white/5">
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Client</th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Description</th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Value</th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Stage</th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Probability</th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Expected Close</th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Owner</th>
-                            <th class="px-6 py-4 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Client</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Description</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Value</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Stage</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Probability</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Expected Close</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Owner</th>
+                            <th class="px-6 py-4 text-right text-xs font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/10">
                         <template x-for="opportunity in opportunities" :key="opportunity.id">
                             <tr class="hover:bg-white/5 transition-colors">
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="font-medium" x-text="opportunity.client"></div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-gray-300 truncate max-w-xs" x-text="opportunity.description"></div>
+                                    <div class="text-gray-300 max-w-md" x-text="opportunity.description"></div>
                                 </td>
-                                <td class="px-6 py-4">
-                                    <span class="font-semibold text-indigo-400" x-text="formatCurrency(opportunity.estimated_value)"></span>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="font-semibold text-indigo-400" x-text="formatCurrency(opportunity.estimated_value, opportunity.currency)"></span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 py-1 text-xs rounded-full capitalize" 
                                           :class="{
                                               'bg-gray-500/20 text-gray-400': opportunity.stage === 'lead',
@@ -104,17 +104,21 @@
                                           x-text="opportunity.stage">
                                     </span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="text-gray-300" x-text="opportunity.probability + '%'"></span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="text-gray-300" x-text="opportunity.expected_close_date"></span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="text-gray-300" x-text="opportunity.owner_email"></span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex gap-2 justify-end">
+                                        <a :href="`/opportunities/${opportunity.id}/projects`" 
+                                           class="px-3 py-1 text-sm rounded-lg bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-500/30 transition-all">
+                                            Projects
+                                        </a>
                                         <a :href="`/opportunities/${opportunity.id}/edit`" 
                                            class="px-3 py-1 text-sm rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/30 transition-all">
                                             Edit
@@ -259,8 +263,8 @@
                     }
                 },
 
-                formatCurrency(value) {
-                    return 'UGX ' + parseFloat(value).toLocaleString('en-US', {
+                formatCurrency(value, currency = 'UGX') {
+                    return currency + ' ' + parseFloat(value).toLocaleString('en-US', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     });

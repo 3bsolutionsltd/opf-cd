@@ -1360,6 +1360,7 @@ Response (Success - 200):
     "client": "ABC Corporation",
     "description": "Website redesign project",
     "estimated_value": 25000000.00,
+    "currency": "UGX",
     "probability": 75.00,
     "stage": "proposal",
     "source": "Referral",
@@ -1374,6 +1375,7 @@ Response (Success - 200):
     "client": "XYZ Industries",
     "description": "Mobile app development",
     "estimated_value": 45000000.00,
+    "currency": "UGX",
     "probability": 50.00,
     "stage": "negotiation",
     "source": "LinkedIn",
@@ -1402,6 +1404,7 @@ Response (Success - 200):
   "client": "ABC Corporation",
   "description": "Website redesign project",
   "estimated_value": 25000000.00,
+  "currency": "UGX",
   "probability": 75.00,
   "stage": "proposal",
   "source": "Referral",
@@ -1434,6 +1437,7 @@ Request:
   "client": "ABC Corporation",
   "description": "Website redesign project",
   "estimated_value": 25000000.00,
+  "currency": "UGX",
   "probability": 75.00,
   "stage": "proposal",
   "source": "Referral",
@@ -1446,6 +1450,7 @@ Request:
 - `client`: required, string, max 255 characters
 - `description`: required, string, max 255 characters
 - `estimated_value`: required, numeric, >= 0
+- `currency`: required, string, one of: `UGX`, `USD`
 - `probability`: required, numeric, 0-100
 - `stage`: required, one of: `lead`, `qualified`, `proposal`, `negotiation`, `won`, `lost`
 - `source`: required, string, max 100 characters
@@ -1503,6 +1508,7 @@ All fields use `sometimes` modifier (only validate if present):
 - `client`: required if present, string, max 255 characters
 - `description`: required if present, string, max 255 characters
 - `estimated_value`: required if present, numeric, >= 0
+- `currency`: required if present, string, one of: `UGX`, `USD`
 - `probability`: required if present, numeric, 0-100
 - `stage`: required if present, one of: `lead`, `qualified`, `proposal`, `negotiation`, `won`, `lost`
 - `source`: required if present, string, max 100 characters

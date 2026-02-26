@@ -4,7 +4,11 @@ Follow the rules in docs/copilot_rules.md.
 
 
 **Status:** Phase 3 Complete (Quality & Security hardening with full audit logging)  
-**Goal:** Production-ready complete system following strict architectural rules
+**Goal:** Production-ready complete system following strict architectural rules  
+**Strategic Enhancements:** Phase 5 planned features documented (Project Templates, Advanced Analytics, AI Assistant)
+
+**Last Updated:** February 26, 2026  
+**Major Update:** Added Phase 5.4 - Project Templates & Workplan Generation (see STRATEGIC_VISION_INTELLIGENT_OPERATIONS.md Section 4)
 
 ---
 
@@ -126,6 +130,13 @@ Follow the rules in docs/copilot_rules.md.
 - **Additional Integration Tests** - Need tests for CRUD operations with audit logging verification (Phase 3.4 extension)
 - **API Documentation** - Contracts documented but no interactive docs (Phase 5)
 - **Notifications** - No email alerts for at-risk projects, payment gaps (Phase 5)
+
+### 📋 STRATEGIC ENHANCEMENTS (Phase 5 - Post-Production)
+- **Project Templates & Workplan Generation** - Auto-generate professional task breakdown by project type (Web App, Mobile App, etc.) - See [STRATEGIC_VISION_INTELLIGENT_OPERATIONS.md](STRATEGIC_VISION_INTELLIGENT_OPERATIONS.md) Section 4
+- **Advanced Analytics** - Business health KPIs, predictive insights, command center
+- **AI-Powered Assistant** - Smart business recommendations and decision support
+- **Marketing Copilot** - Lead generation, nurturing, and content management
+- Full strategic vision: [STRATEGIC_VISION_INTELLIGENT_OPERATIONS.md](STRATEGIC_VISION_INTELLIGENT_OPERATIONS.md)
 
 ---
 
@@ -580,6 +591,108 @@ Follow the rules in docs/copilot_rules.md.
 
 ---
 
+### 5.4 Project Templates & Workplan Generation
+
+**What:**
+- Auto-generate professional project workplans from templates
+- Pre-populated task breakdown based on project type (Web App, Mobile App, E-Commerce, Integration, Maintenance)
+- Reduce project setup time from 30-60 minutes to 2-3 minutes
+- Ensure consistency and completeness of project structures
+
+**Why:**
+- **Time Savings:** 90% reduction in project setup time per project
+- **Quality:** Never miss critical phases (testing, deployment, security audit)
+- **Onboarding:** New PMs get professional guidance built-in
+- **Consistency:** All similar projects follow industry-standard structure
+- **Client Confidence:** Professional workplans impress clients at inception
+
+**How (Following Rules):**
+- `ProjectTemplateService` - manages templates and task definitions (returns facts only)
+- Enhanced `OpportunityProjectService.createProjectWithTemplate()` - creates project + tasks atomically
+- Database tables: `project_templates`, `project_template_tasks`
+- Add `project_type` field to `opportunities` table
+- Blade forms for template selection and preview
+- Admin interface for template management
+
+**User Workflows:**
+1. **Automatic:** Opportunity has `project_type` → system auto-applies matching template when won
+2. **Manual Selection:** User selects template during project creation from opportunity
+3. **Apply to Existing:** User can apply template to empty project after creation
+
+**Five Built-In Templates:**
+- **Web Application** (8 tasks): Requirements → UI/UX → Frontend → Backend → Database → Testing → Deployment
+- **Mobile App** (7 tasks): Requirements → Mobile UI → iOS Dev → Android Dev → Backend API → Testing → App Store
+- **E-Commerce** (9 tasks): Requirements → UX → Catalog → Cart/Checkout → Payments → Order Mgmt → Admin → Testing → Go-Live
+- **System Integration** (7 tasks): Analysis → Architecture → API Dev → Data Migration → Error Handling → Testing → Rollout
+- **Maintenance** (5 tasks): Bug Fixes → Monitoring → Enhancements → Support → Management
+
+**Files:**
+- `database/migrations/create_project_templates_table.sql`
+- `database/migrations/create_project_template_tasks_table.sql`
+- `database/migrations/add_project_type_to_opportunities.sql`
+- `app/Services/ProjectTemplateService.php`
+- Enhanced: `app/Services/OpportunityProjectService.php`
+- `app/Http/Controllers/TemplateController.php` (admin CRUD)
+- `resources/views/admin/templates/` (admin interface)
+- `resources/views/opportunities/create.blade.php` (add template selection)
+- `database/seeders/ProjectTemplateSeeder.php` (5 default templates)
+
+**API Endpoints:**
+```php
+// Template usage (Project Managers)
+GET  /api/templates                                // List active templates
+GET  /api/templates/{id}/preview                  // Preview tasks before applying
+POST /api/opportunities/{id}/projects/with-template // Create with template
+POST /api/projects/{id}/apply-template            // Apply to existing empty project
+
+// Template management (Admin only)
+GET    /api/admin/templates                       // List all
+POST   /api/admin/templates                        // Create
+PUT    /api/admin/templates/{id}                  // Update
+DELETE /api/admin/templates/{id}                   // Delete
+POST   /api/admin/templates/{id}/tasks            // Add task to template
+PUT    /api/admin/templates/tasks/{taskId}        // Update task
+DELETE /api/admin/templates/tasks/{taskId}        // Delete task
+```
+
+**Implementation Phases:**
+- Phase 5.4.1: Database schema + seed 5 templates (Week 1)
+- Phase 5.4.2: Core services (ProjectTemplateService) (Week 1-2)
+- Phase 5.4.3: API endpoints (Week 2)
+- Phase 5.4.4: Frontend integration (Week 2-3)
+- Phase 5.4.5: Admin interface (Week 3)
+- Phase 5.4.6: Testing & launch (Week 3-4)
+
+**Estimated Effort:** 3-4 weeks  
+**Priority:** High (immediate ROI, professional differentiation)
+
+**References:**
+- Full specification: [STRATEGIC_VISION_INTELLIGENT_OPERATIONS.md](STRATEGIC_VISION_INTELLIGENT_OPERATIONS.md) Section 4
+- Related: [PLANNED_PROJECT_TEMPLATES_WORKPLAN.md](backend/PLANNED_PROJECT_TEMPLATES_WORKPLAN.md)
+
+**Business Impact:**
+```
+Scenario: 20 projects per year
+
+BEFORE:
+- 20 projects × 45 min setup = 900 minutes (15 hours)
+- PM hourly rate: $75/hr
+- Annual cost: $1,125
+
+AFTER:
+- 20 projects × 3 min setup = 60 minutes (1 hour)
+- Annual cost: $75
+- SAVINGS: $1,050/year (93% reduction)
+
+PLUS:
+- Reduced risk of incomplete project structures
+- Faster project starts → revenue realized sooner
+- Better client experience at inception meetings
+- Easier onboarding for new project managers
+```
+
+---
+
 ## IMPLEMENTATION STRATEGY
 
 ### Order of Operations
@@ -610,7 +723,12 @@ Follow the rules in docs/copilot_rules.md.
 - **Phase 3 (Quality & Security):** 3-4 weeks
 - **Phase 4 (Deployment):** 2-3 weeks
 - **Phase 5 (Enhancements):** 4-6 weeks (optional)
-- **Total:** 15-21 weeks for Phases 2-4
+  - 5.1 Notifications: 1-2 weeks
+  - 5.2 Reports & Export: 1-2 weeks
+  - 5.3 Advanced Dashboards: 2 weeks
+  - 5.4 Project Templates: 3-4 weeks (high-value, recommended)
+- **Total:** 15-21 weeks for Phases 2-4 (production-ready)
+- **With Phase 5:** 19-27 weeks (strategic enhancements included)
 
 ---
 
@@ -640,6 +758,17 @@ Follow the rules in docs/copilot_rules.md.
 - ✅ Health check endpoint responding
 - ✅ Admin user created and tested
 - ✅ Deployment documentation complete
+
+### Phase 5.4 Complete When (Project Templates):
+- ✅ 5 default templates seeded (Web App, Mobile App, E-Commerce, Integration, Maintenance)
+- ✅ All template tasks sum to 100% weight
+- ✅ ProjectTemplateService follows single-responsibility principle
+- ✅ Opportunity won → project with tasks created atomically
+- ✅ Template selection UI functional in project creation flow
+- ✅ Admin can create/edit/delete custom templates
+- ✅ Project setup time reduced from 30-60 min to <5 min
+- ✅ Template application tested with all 5 template types
+- ✅ Audit logging captures template-based project creation
 
 ### Production Ready When:
 - ✅ All Phase 2-4 criteria met

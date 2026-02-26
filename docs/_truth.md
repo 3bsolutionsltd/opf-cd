@@ -70,8 +70,74 @@ Cash at Hand / Average Monthly Burn
 ---
 
 ## Opportunities
+Each opportunity captures estimated value in its respective currency (UGX or USD) to maintain fluidity without conversion requirements.
+
 Weighted Pipeline Value =
 Σ(opportunity.value × probability / 100)
+
+Note: Pipeline calculations are performed per currency. Multi-currency pipeline totals require explicit conversion at display time.
+
+### Won Opportunity to Project Conversion
+
+When an opportunity's stage changes to "won", the system can create a project linked to that opportunity. There are two creation methods: automatic and manual.
+
+#### Automatic Creation
+
+When an opportunity's stage changes to "won" for the **first time**, the system automatically creates a project.
+
+**Duplicate Prevention**: If any projects already exist for the opportunity (even if it was previously won, then changed, then won again), automatic creation is skipped. This prevents duplicate projects from stage transitions.
+
+**Automatic Project Fields**:
+- `name`: Auto-generated as "{client} - Project ({timestamp})"
+- `client`: Copied from opportunity.client
+- `contract_value`: Set to opportunity.estimated_value initially
+- `contract_currency`: Set to opportunity.currency
+- `start_date`: Set to current date when won
+- `end_date`: NULL (requires manual entry)
+- `status`: Set to "planned"
+- `project_lead_id`: NULL (requires manual assignment)
+- `opportunity_id`: Foreign key to originating opportunity
+
+#### Manual Creation
+
+For multi-phase opportunities, users can manually create additional projects via:
+- **Endpoint**: `POST /api/opportunities/{opportunityId}/projects`
+- **Permission**: Requires `opportunities.edit` permission
+- **Stage-Agnostic**: Works regardless of opportunity stage (not only "won")
+
+**Manual Project Fields**:
+- `name`: User-provided (required)
+- `client`: Always copied from opportunity (not user-editable)
+- `contract_value`: User-provided (required)
+- `contract_currency`: User-provided (required, must be USD or UGX)
+- `start_date`: User-provided (required, Y-m-d format)
+- `end_date`: User-provided (optional, nullable, must be >= start_date)
+- `status`: User-provided (optional, defaults to "planned")
+- `project_lead_id`: User-provided (optional, nullable, must exist in users table)
+- `opportunity_id`: Foreign key to originating opportunity
+
+#### Multi-Phase Support
+
+Multiple projects can be linked to a single opportunity. Common scenarios:
+- **Phase 1**: Initial implementation project (auto-created when won)
+- **Phase 2**: Enhancement project (manually created later)
+- **Phase 3**: Maintenance project (manually created after delivery)
+
+#### Project Independence
+
+Once created, projects have independent lifecycles:
+- Changing opportunity stage (e.g., won → negotiation) does NOT affect existing projects
+- Projects are never auto-cancelled or auto-deleted
+- Projects remain linked via `opportunity_id` for historical reference
+- All state changes are logged in audit trail
+
+**Rationale**: In multi-phase scenarios, it's impossible to determine which project(s) should be affected by opportunity stage changes. Manual project management is required.
+
+#### Listing Projects for Opportunity
+
+- **Endpoint**: `GET /api/opportunities/{opportunityId}/projects`
+- **Permission**: Requires `opportunities.view` permission
+- **Returns**: All projects linked to the opportunity, ordered by creation date (newest first)
 
 ---
 

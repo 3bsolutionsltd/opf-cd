@@ -16,10 +16,14 @@ use Illuminate\Http\Request;
 class OpportunityManagementService
 {
     private AuditService $auditService;
+    private OpportunityProjectService $opportunityProjectService;
 
-    public function __construct(AuditService $auditService)
-    {
+    public function __construct(
+        AuditService $auditService,
+        OpportunityProjectService $opportunityProjectService
+    ) {
         $this->auditService = $auditService;
+        $this->opportunityProjectService = $opportunityProjectService;
     }
     /**
      * Get all opportunities ordered by expected close date.
@@ -43,6 +47,7 @@ class OpportunityManagementService
                     'client' => $opportunity->client,
                     'description' => $opportunity->description,
                     'estimated_value' => (float) $opportunity->estimated_value,
+                    'currency' => $opportunity->currency,
                     'probability' => (float) $opportunity->probability,
                     'stage' => $opportunity->stage,
                     'source' => $opportunity->source,
@@ -84,6 +89,7 @@ class OpportunityManagementService
             'client' => $opportunity->client,
             'description' => $opportunity->description,
             'estimated_value' => (float) $opportunity->estimated_value,
+            'currency' => $opportunity->currency,
             'probability' => (float) $opportunity->probability,
             'stage' => $opportunity->stage,
             'source' => $opportunity->source,
@@ -98,7 +104,7 @@ class OpportunityManagementService
     /**
      * Create a new opportunity.
      * 
-     * @param array $data Opportunity data (client, description, estimated_value, probability, stage, source, owner, expected_close_date)
+     * @param array $data Opportunity data (client, description, estimated_value, currency, probability, stage, source, owner, expected_close_date)
      * @param int $userId
      * @param Request|null $request
      * @return array ['success' => bool, 'message' => string, 'opportunity_id' => int|null]
@@ -110,6 +116,7 @@ class OpportunityManagementService
                 'client' => $data['client'],
                 'description' => $data['description'],
                 'estimated_value' => $data['estimated_value'],
+                'currency' => $data['currency'] ?? 'UGX',
                 'probability' => $data['probability'],
                 'stage' => $data['stage'] ?? 'lead',
                 'source' => $data['source'],
@@ -173,6 +180,7 @@ class OpportunityManagementService
                 'client' => $data['client'] ?? null,
                 'description' => $data['description'] ?? null,
                 'estimated_value' => $data['estimated_value'] ?? null,
+                'currency' => $data['currency'] ?? null,
                 'probability' => $data['probability'] ?? null,
                 'stage' => $data['stage'] ?? null,
                 'source' => $data['source'] ?? null,
@@ -200,9 +208,55 @@ class OpportunityManagementService
                 $request
             );
 
+            // Check if stage changed to 'won' and handle project creation
+            $stageChanged = ($before['stage'] ?? null) !== ($after['stage'] ?? null);
+            $isNowWon = ($after['stage'] ?? null) === 'won';
+            
+            $message = 'Opportunity updated successfully.';
+            $projectCreationResult = null;
+
+            if ($stageChanged && $isNowWon) {
+                // Check if projects already exist for this opportunity
+                $existingProjects = DB::table('projects')
+                    ->where('opportunity_id', $opportunityId)
+                    ->select('id', 'name', 'status')
+                    ->get();
+
+                if ($existingProjects->isEmpty()) {
+                    // No projects exist - create first one automatically
+                    $projectCreationResult = $this->opportunityProjectService->createProjectFromOpportunity(
+                        $opportunityId,
+                        $userId,
+                        $request
+                    );
+
+                    if ($projectCreationResult['success']) {
+                        $message .= ' Project created automatically (ID: ' . $projectCreationResult['project_id'] . ').';
+                    } else {
+                        $message .= ' Warning: Failed to auto-create project - ' . $projectCreationResult['message'];
+                    }
+                } else {
+                    // Projects already exist - don't create duplicate
+                    $projectCount = $existingProjects->count();
+                    $projectIds = $existingProjects->pluck('id')->toArray();
+                    
+                    $message .= ' Opportunity marked as won. ' . $projectCount . ' existing project(s) found (IDs: ' . implode(', ', $projectIds) . ').';
+                    
+                    $projectCreationResult = [
+                        'success' => true,
+                        'project_id' => null,
+                        'existing_projects' => $projectIds,
+                        'message' => 'Projects already exist for this opportunity'
+                    ];
+                }
+            }
+
             return [
                 'success' => true,
-                'message' => 'Opportunity updated successfully.',
+                'message' => $message,
+                'project_created' => isset($projectCreationResult['project_id']) && $projectCreationResult['project_id'] !== null,
+                'project_id' => $projectCreationResult['project_id'] ?? null,
+                'existing_projects' => $projectCreationResult['existing_projects'] ?? [],
             ];
         } catch (\Exception $e) {
             return [
@@ -261,5 +315,38 @@ class OpportunityManagementService
                 'message' => 'Failed to delete opportunity: ' . $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Manually create a project linked to an opportunity.
+     * 
+     * Delegates to OpportunityProjectService to handle multi-phase scenarios
+     * where multiple projects need to be created from a single opportunity.
+     * 
+     * @param int $opportunityId The opportunity to link to
+     * @param array $projectData Project details from user
+     * @param int $userId User creating the project
+     * @param Request|null $request Request for audit trail
+     * @return array Result from project creation
+     */
+    public function createProjectFromOpportunity(int $opportunityId, array $projectData, int $userId, ?Request $request = null): array
+    {
+        return $this->opportunityProjectService->createManualProject(
+            $opportunityId,
+            $projectData,
+            $userId,
+            $request
+        );
+    }
+
+    /**
+     * Get all projects linked to an opportunity.
+     * 
+     * @param int $opportunityId The opportunity ID
+     * @return array List of projects
+     */
+    public function getProjectsForOpportunity(int $opportunityId): array
+    {
+        return $this->opportunityProjectService->getProjectsForOpportunity($opportunityId);
     }
 }

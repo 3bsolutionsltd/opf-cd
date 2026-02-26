@@ -30,6 +30,7 @@ class StoreOpportunityRequest extends FormRequest
             'client' => 'required|string|max:255',
             'description' => 'required|string|max:255',
             'estimated_value' => 'required|numeric|min:0',
+            'currency' => 'required|string|in:UGX,USD',
             'probability' => 'required|numeric|min:0|max:100',
             'stage' => 'required|in:lead,qualified,proposal,negotiation,won,lost',
             'source' => 'required|string|max:100',

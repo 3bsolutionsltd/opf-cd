@@ -18,6 +18,7 @@ use App\Http\Controllers\AlertController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\UserController;
 
 // Health check endpoint (public, no authentication required)
 Route::get('/health', [HealthCheckController::class, 'check']);
@@ -29,6 +30,12 @@ Route::middleware(['web'])->group(function () {
 Route::middleware(['check.permission:dashboards,view'])->group(function () {
     Route::get('/user/permissions', [AuthController::class, 'getPermissions']);
     Route::get('/user', [AuthController::class, 'getCurrentUser']);
+});
+
+// Users endpoints (protected)
+Route::middleware(['check.permission:dashboards,view'])->group(function () {
+    Route::get('/users', [UserController::class, 'apiIndex']);
+    Route::get('/users/{userId}', [UserController::class, 'apiShow']);
 });
 
 // Dashboard endpoints (protected)
@@ -141,6 +148,7 @@ Route::middleware(['check.permission:expenses,delete'])->group(function () {
 Route::middleware(['check.permission:opportunities,view'])->group(function () {
     Route::get('/opportunities', [OpportunityController::class, 'apiIndex']);
     Route::get('/opportunities/{opportunityId}', [OpportunityController::class, 'apiShow']);
+    Route::get('/opportunities/{opportunityId}/projects', [OpportunityController::class, 'getProjects']);
 });
 
 Route::middleware(['check.permission:opportunities,create'])->group(function () {
@@ -149,6 +157,7 @@ Route::middleware(['check.permission:opportunities,create'])->group(function () 
 
 Route::middleware(['check.permission:opportunities,edit'])->group(function () {
     Route::put('/opportunities/{opportunityId}', [OpportunityController::class, 'update']);
+    Route::post('/opportunities/{opportunityId}/projects', [OpportunityController::class, 'createProject']);
 });
 
 Route::middleware(['check.permission:opportunities,delete'])->group(function () {

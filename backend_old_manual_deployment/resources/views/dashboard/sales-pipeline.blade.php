@@ -69,15 +69,38 @@ No service calls.
                 </div>
                 <div class="text-2xl text-gray-300 mb-8">Active Opportunities</div>
                 
-                <div class="text-5xl font-bold text-gray-200 mb-2">
-                    <span x-text="pipeline.total_value?.toLocaleString()"></span>
+                <!-- Currency Breakdown -->
+                <div x-show="pipeline.by_currency" class="space-y-4 mb-8">
+                    <div>
+                        <div class="text-4xl font-bold text-gray-200 mb-2">
+                            UGX <span x-text="pipeline.by_currency?.UGX?.total_value?.toLocaleString() || 0"></span>
+                        </div>
+                        <div class="text-sm text-gray-400">
+                            <span x-text="pipeline.by_currency?.UGX?.count || 0"></span> opportunities
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-bold text-gray-300 mb-2">
+                            USD <span x-text="pipeline.by_currency?.USD?.total_value?.toLocaleString() || 0"></span>
+                        </div>
+                        <div class="text-sm text-gray-400">
+                            <span x-text="pipeline.by_currency?.USD?.count || 0"></span> opportunities
+                        </div>
+                    </div>
                 </div>
-                <div class="text-gray-400">Total Pipeline Value</div>
                 
-                <div class="mt-6 text-3xl font-bold text-purple-300">
-                    <span x-text="pipeline.weighted_value?.toLocaleString()"></span>
+                <div class="mt-6 border-t border-white/10 pt-6">
+                    <div class="text-sm text-gray-500 mb-2">Weighted Pipeline Value</div>
+                    <div class="space-y-2">
+                        <div class="text-2xl font-bold text-purple-300">
+                            UGX <span x-text="pipeline.by_currency?.UGX?.weighted_value?.toLocaleString() || 0"></span>
+                        </div>
+                        <div class="text-xl font-bold text-purple-400">
+                            USD <span x-text="pipeline.by_currency?.USD?.weighted_value?.toLocaleString() || 0"></span>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2">Based on win probability</div>
                 </div>
-                <div class="text-sm text-gray-400">Weighted Pipeline Value</div>
             </div>
 
             <!-- Stage Breakdown -->

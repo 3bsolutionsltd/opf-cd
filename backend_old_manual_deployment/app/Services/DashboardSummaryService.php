@@ -62,8 +62,13 @@ class DashboardSummaryService
 
         $cashAtHand = $totalOpeningBalance + $totalInflows - $totalOutflows;
 
-        // Total pipeline value
-        $totalPipelineValue = DB::table('opportunities')
+        // Total pipeline value per currency
+        $pipelineUGX = DB::table('opportunities')
+            ->where('currency', 'UGX')
+            ->sum('estimated_value') ?? 0;
+        
+        $pipelineUSD = DB::table('opportunities')
+            ->where('currency', 'USD')
             ->sum('estimated_value') ?? 0;
 
         // Upcoming expenses (next 90 days)
@@ -113,7 +118,8 @@ class DashboardSummaryService
             'cash_at_hand' => round($cashAtHand, 2),
             'burn_rate' => $burnRate,
             'cash_runway_months' => $cashRunway,
-            'total_pipeline_value' => round($totalPipelineValue, 2),
+            'pipeline_ugx' => round($pipelineUGX, 2),
+            'pipeline_usd' => round($pipelineUSD, 2),
             'total_upcoming_expenses' => round($totalUpcomingExpenses, 2),
             'health_green_count' => $greenCount,
             'health_red_count' => $redCount,

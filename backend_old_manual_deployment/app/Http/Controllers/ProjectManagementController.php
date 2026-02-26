@@ -39,7 +39,7 @@ class ProjectManagementController extends Controller
      */
     public function store(StoreProjectRequest $request): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->projectManagementService->createProject(
             $request->validated(),
             $userId,
@@ -72,7 +72,7 @@ class ProjectManagementController extends Controller
      */
     public function update(UpdateProjectRequest $request, int $id): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->projectManagementService->updateProject(
             $id,
             $request->validated(),
@@ -90,7 +90,7 @@ class ProjectManagementController extends Controller
      */
     public function destroy(\Illuminate\Http\Request $request, int $id): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId = $request->get('authenticated_user_id');
         $result = $this->projectManagementService->deleteProject($id, $userId, $request);
         
         return response()->json($result, $result['success'] ? 200 : 400);

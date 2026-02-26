@@ -16,6 +16,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
         
+        // Inject authenticated user ID into all web and API requests
+        $middleware->web(append: [
+            \App\Http\Middleware\InjectAuthenticatedUserId::class,
+        ]);
+        
+        $middleware->api(append: [
+            \App\Http\Middleware\InjectAuthenticatedUserId::class,
+        ]);
+        
         // API rate limiting: 60 requests per minute per user
         $middleware->throttleApi('60,1');
     })

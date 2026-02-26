@@ -65,10 +65,21 @@
 
                 <!-- Estimated Value -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Estimated Value (UGX) *</label>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Estimated Value *</label>
                     <input type="number" x-model="form.estimated_value" required min="0" step="0.01" placeholder="0.00"
                            class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-100 focus:outline-none focus:border-indigo-500 transition-colors">
                     <p x-show="errors.estimated_value" class="mt-1 text-sm text-red-400" x-text="errors.estimated_value"></p>
+                </div>
+
+                <!-- Currency -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Currency *</label>
+                    <select x-model="form.currency" required
+                            class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-100 focus:outline-none focus:border-indigo-500 transition-colors">
+                        <option value="UGX">UGX (Ugandan Shilling)</option>
+                        <option value="USD">USD (US Dollar)</option>
+                    </select>
+                    <p x-show="errors.currency" class="mt-1 text-sm text-red-400" x-text="errors.currency"></p>
                 </div>
 
                 <!-- Probability -->
@@ -156,6 +167,7 @@
                     client: '',
                     description: '',
                     estimated_value: '',
+                    currency: 'UGX',
                     probability: 50,
                     stage: 'lead',
                     source: '',
@@ -220,6 +232,7 @@
                             client: '',
                             description: '',
                             estimated_value: '',
+                            currency: 'UGX',
                             probability: 50,
                             stage: 'lead',
                             source: '',

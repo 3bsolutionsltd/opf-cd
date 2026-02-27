@@ -10,6 +10,7 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CashTransactionController;
+use App\Http\Controllers\AdminTemplateController;
 
 // Authentication routes (public)
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -160,4 +161,9 @@ Route::middleware(['check.permission:cash_transactions,view'])->group(function (
 
 Route::middleware(['check.permission:cash_transactions,create'])->group(function () {
     Route::get('/cash-transactions/create', [CashTransactionController::class, 'create'])->name('cash-transactions.create');
+});
+
+// Admin Template Management routes (Phase 5.4 - Admin Interface)
+Route::middleware(['check.permission:dashboards,view'])->group(function () {
+    Route::get('/admin/templates', [AdminTemplateController::class, 'index'])->name('admin.templates.index');
 });

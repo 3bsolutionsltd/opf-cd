@@ -19,6 +19,7 @@ use App\Http\Controllers\AuditController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\TemplateController;
 
 // Health check endpoint (public, no authentication required)
 Route::get('/health', [HealthCheckController::class, 'check']);
@@ -219,6 +220,27 @@ Route::middleware(['check.permission:dashboards,view'])->group(function () {
     Route::get('/reports/export/expenses', [ReportController::class, 'exportExpenses']);
     Route::get('/reports/export/audit-logs', [ReportController::class, 'exportAuditLogs']);
     Route::get('/reports/export/project-health', [ReportController::class, 'exportProjectHealth']);
+});
+
+// Project Templates endpoints (Phase 5.4 - Template-based project creation)
+// Public endpoints for Project Managers
+Route::middleware(['check.permission:projects,view'])->group(function () {
+    Route::get('/templates', [TemplateController::class, 'index']); // List active templates
+    Route::get('/templates/{id}', [TemplateController::class, 'show']); // Get template with tasks
+    Route::get('/templates/{id}/preview', [TemplateController::class, 'preview']); // Preview template
+    Route::post('/opportunities/{opportunityId}/projects/with-template', [TemplateController::class, 'createProjectWithTemplate']); // Create project with template
+    Route::post('/projects/{projectId}/apply-template', [TemplateController::class, 'applyTemplate']); // Apply template to existing project
+});
+
+// Admin endpoints for template management
+Route::middleware(['check.permission:dashboards,view'])->group(function () {
+    Route::get('/admin/templates', [TemplateController::class, 'adminIndex']); // List all templates
+    Route::post('/admin/templates', [TemplateController::class, 'store']); // Create template
+    Route::put('/admin/templates/{id}', [TemplateController::class, 'update']); // Update template
+    Route::delete('/admin/templates/{id}', [TemplateController::class, 'destroy']); // Delete template
+    Route::post('/admin/templates/{id}/tasks', [TemplateController::class, 'addTask']); // Add task to template
+    Route::put('/admin/templates/tasks/{taskId}', [TemplateController::class, 'updateTask']); // Update task
+    Route::delete('/admin/templates/tasks/{taskId}', [TemplateController::class, 'deleteTask']); // Delete task
 });
 
 }); // End web middleware group

@@ -4,14 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Services\ProjectTemplateService;
-use App\Services\OpportunityProjectService;
+use App\Services\TemplateManagementService;
 
 /**
  * TemplateController
  * 
- * Handles API endpoints for project templates
- * Thin controller following rules: passes through to services
+ * Thin pass-through controller following OPF-CD strict rules.
+ * Injects ONLY ONE business service (TemplateManagementService).
+ * Contains NO business logic, NO calculations, NO transformations.
  * 
  * Public endpoints (Project Managers):
  * - GET /api/templates - List active templates
@@ -28,15 +28,11 @@ use App\Services\OpportunityProjectService;
  */
 class TemplateController extends Controller
 {
-    private ProjectTemplateService $templateService;
-    private OpportunityProjectService $projectService;
+    private TemplateManagementService $service;
 
-    public function __construct(
-        ProjectTemplateService $templateService,
-        OpportunityProjectService $projectService
-    ) {
-        $this->templateService = $templateService;
-        $this->projectService = $projectService;
+    public function __construct(TemplateManagementService $service)
+    {
+        $this->service = $service;
     }
 
     /**
@@ -46,7 +42,7 @@ class TemplateController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $templates = $this->templateService->getAllActiveTemplates();
+            $templates = $this->service->getAllActiveTemplates();
             
             return response()->json([
                 'success' => true,
@@ -69,7 +65,7 @@ class TemplateController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            $template = $this->templateService->getTemplateWithTasks($id);
+            $template = $this->service->getTemplateWithTasks($id);
             
             if (!$template) {
                 return response()->json([
@@ -94,32 +90,19 @@ class TemplateController extends Controller
     /**
      * GET /api/templates/{id}/preview
      * Preview template tasks without applying
+     * 
+     * All calculations delegated to service layer (compliant with rules).
      */
     public function preview(int $id): JsonResponse
     {
         try {
-            $template = $this->templateService->getTemplate($id);
+            $result = $this->service->getTemplatePreview($id);
             
-            if (!$template) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Template not found'
-                ], 404);
+            if (!$result['success']) {
+                return response()->json($result, 404);
             }
 
-            $tasks = $this->templateService->getTemplateTasks($id);
-            $totalWeight = $tasks->sum('weight');
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'template' => $template,
-                    'tasks' => $tasks,
-                    'total_weight' => $totalWeight,
-                    'is_valid' => $totalWeight === 100
-                ],
-                'message' => 'Template preview retrieved'
-            ]);
+            return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -131,6 +114,8 @@ class TemplateController extends Controller
     /**
      * POST /api/opportunities/{opportunityId}/projects/with-template
      * Create project from opportunity with template
+     * 
+     * Uses middleware authentication pattern (compliant with rules).
      */
     public function createProjectWithTemplate(Request $request, int $opportunityId): JsonResponse
     {
@@ -139,9 +124,9 @@ class TemplateController extends Controller
                 'template_id' => 'required|integer|exists:project_templates,id'
             ]);
 
-            $userId = auth()->id() ?? 1; // Get current user or fallback to admin
+            $userId = $request->get('authenticated_user_id');
 
-            $result = $this->projectService->createProjectWithTemplate(
+            $result = $this->service->createProjectWithTemplate(
                 $opportunityId,
                 $validated['template_id'],
                 $userId,
@@ -182,6 +167,8 @@ class TemplateController extends Controller
     /**
      * POST /api/projects/{projectId}/apply-template
      * Apply template to existing project
+     * 
+     * Uses middleware authentication pattern (compliant with rules).
      */
     public function applyTemplate(Request $request, int $projectId): JsonResponse
     {
@@ -190,9 +177,9 @@ class TemplateController extends Controller
                 'template_id' => 'required|integer|exists:project_templates,id'
             ]);
 
-            $userId = auth()->id() ?? 1;
+            $userId = $request->get('authenticated_user_id');
 
-            $result = $this->projectService->applyTemplateToProject(
+            $result = $this->service->applyTemplateToProject(
                 $projectId,
                 $validated['template_id'],
                 $userId,
@@ -237,7 +224,7 @@ class TemplateController extends Controller
     public function adminIndex(): JsonResponse
     {
         try {
-            $templates = $this->templateService->getAllTemplates();
+            $templates = $this->service->getAllTemplates();
             
             return response()->json([
                 'success' => true,
@@ -268,7 +255,7 @@ class TemplateController extends Controller
                 'average_duration_days' => 'nullable|integer|min:1'
             ]);
 
-            $templateId = $this->templateService->createTemplate($validated);
+            $templateId = $this->service->createTemplate($validated);
 
             return response()->json([
                 'success' => true,
@@ -304,7 +291,7 @@ class TemplateController extends Controller
                 'average_duration_days' => 'nullable|integer|min:1'
             ]);
 
-            $success = $this->templateService->updateTemplate($id, $validated);
+            $success = $this->service->updateTemplate($id, $validated);
 
             if (!$success) {
                 return response()->json([
@@ -338,7 +325,7 @@ class TemplateController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $success = $this->templateService->deleteTemplate($id);
+            $success = $this->service->deleteTemplate($id);
 
             if (!$success) {
                 return response()->json([
@@ -375,7 +362,7 @@ class TemplateController extends Controller
                 'dependencies' => 'nullable|string'
             ]);
 
-            $taskId = $this->templateService->addTaskToTemplate($id, $validated);
+            $taskId = $this->service->addTaskToTemplate($id, $validated);
 
             return response()->json([
                 'success' => true,
@@ -412,7 +399,7 @@ class TemplateController extends Controller
                 'dependencies' => 'nullable|string'
             ]);
 
-            $success = $this->templateService->updateTemplateTask($taskId, $validated);
+            $success = $this->service->updateTemplateTask($taskId, $validated);
 
             if (!$success) {
                 return response()->json([
@@ -446,7 +433,7 @@ class TemplateController extends Controller
     public function deleteTask(int $taskId): JsonResponse
     {
         try {
-            $success = $this->templateService->deleteTemplateTask($taskId);
+            $success = $this->service->deleteTemplateTask($taskId);
 
             if (!$success) {
                 return response()->json([

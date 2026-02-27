@@ -316,7 +316,7 @@ class OpportunityProjectService
 
             // Validate template weights sum to 100
             $totalWeight = $templateTasks->sum('weight');
-            if ($totalWeight !== 100) {
+            if (abs($totalWeight - 100) > 0.01) { // Allow for floating point precision
                 DB::rollBack();
                 return [
                     'success' => false,
@@ -329,13 +329,17 @@ class OpportunityProjectService
             // Create project from opportunity
             $projectName = $opportunity->client . ' - ' . $template->name . ' (' . date('Y-m-d H:i') . ')';
             
+            // Calculate end date based on template duration or default to 30 days
+            $durationDays = $template->average_duration_days ?? 30;
+            $endDate = now()->addDays($durationDays)->format('Y-m-d');
+            
             $projectId = DB::table('projects')->insertGetId([
                 'name' => $projectName,
                 'client' => $opportunity->client,
                 'contract_value' => $opportunity->estimated_value,
                 'contract_currency' => $opportunity->currency,
                 'start_date' => now()->format('Y-m-d'),
-                'end_date' => null,
+                'end_date' => $endDate,
                 'status' => 'planned',
                 'project_lead_id' => null,
                 'opportunity_id' => $opportunityId,
@@ -348,12 +352,13 @@ class OpportunityProjectService
                 DB::table('tasks')->insertGetId([
                     'project_id' => $projectId,
                     'name' => $templateTask->name,
-                    'description' => $templateTask->description,
+                    'category' => null,
                     'weight' => $templateTask->weight,
-                    'phase_number' => $templateTask->phase_number,
-                    'estimated_duration_days' => $templateTask->estimated_duration_days,
-                    'dependencies' => $templateTask->dependencies,
-                    'status' => 'planned',
+                    'progress' => 0,
+                    'status' => 'todo',
+                    'assigned_to' => null,
+                    'start_date' => null,
+                    'due_date' => null,
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
@@ -372,7 +377,7 @@ class OpportunityProjectService
                     'contract_value' => $opportunity->estimated_value,
                     'contract_currency' => $opportunity->currency,
                     'start_date' => now()->format('Y-m-d'),
-                    'end_date' => null,
+                    'end_date' => $endDate,
                     'status' => 'planned',
                     'project_lead_id' => null,
                     'opportunity_id' => $opportunityId,
@@ -490,12 +495,13 @@ class OpportunityProjectService
                 DB::table('tasks')->insertGetId([
                     'project_id' => $projectId,
                     'name' => $templateTask->name,
-                    'description' => $templateTask->description,
+                    'category' => null,
                     'weight' => $templateTask->weight,
-                    'phase_number' => $templateTask->phase_number,
-                    'estimated_duration_days' => $templateTask->estimated_duration_days,
-                    'dependencies' => $templateTask->dependencies,
-                    'status' => 'planned',
+                    'progress' => 0,
+                    'status' => 'todo',
+                    'assigned_to' => null,
+                    'start_date' => null,
+                    'due_date' => null,
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);

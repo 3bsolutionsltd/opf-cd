@@ -30,6 +30,7 @@ CREATE TABLE projects (
   end_date TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'active', 'on_hold', 'completed', 'cancelled')),
   project_lead_id INTEGER REFERENCES users(id) ON DELETE RESTRICT,
+  opportunity_id INTEGER REFERENCES opportunities(id) ON DELETE SET NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   CHECK (end_date >= start_date)
@@ -41,6 +42,7 @@ CREATE INDEX idx_projects_client ON projects(client);
 CREATE INDEX idx_projects_start_date ON projects(start_date);
 CREATE INDEX idx_projects_end_date ON projects(end_date);
 CREATE INDEX idx_projects_created_at ON projects(created_at);
+CREATE INDEX idx_projects_opportunity_id ON projects(opportunity_id);
 
 -- ===== TASKS TABLE =====
 CREATE TABLE tasks (
@@ -145,11 +147,15 @@ CREATE TABLE opportunities (
   client TEXT NOT NULL,
   description TEXT NOT NULL,
   estimated_value REAL NOT NULL CHECK (estimated_value >= 0),
+  currency TEXT NOT NULL DEFAULT 'UGX' CHECK (currency IN ('USD', 'UGX')),
   probability REAL NOT NULL CHECK (probability >= 0 AND probability <= 100),
   stage TEXT NOT NULL DEFAULT 'lead' CHECK (stage IN ('lead', 'qualified', 'proposal', 'negotiation', 'won', 'lost')),
   source TEXT NOT NULL,
   owner INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   expected_close_date TEXT NOT NULL,
+  project_type TEXT,
+  auto_apply_template INTEGER DEFAULT 0,
+  suggested_template_id INTEGER REFERENCES project_templates(id) ON DELETE SET NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -158,6 +164,9 @@ CREATE INDEX idx_opportunities_stage ON opportunities(stage);
 CREATE INDEX idx_opportunities_owner ON opportunities(owner);
 CREATE INDEX idx_opportunities_expected_close_date ON opportunities(expected_close_date);
 CREATE INDEX idx_opportunities_created_at ON opportunities(created_at);
+CREATE INDEX idx_opportunities_currency ON opportunities(currency);
+CREATE INDEX idx_opportunities_project_type ON opportunities(project_type);
+CREATE INDEX idx_opportunities_template ON opportunities(suggested_template_id);
 
 -- ===== EXCHANGE RATES TABLE =====
 CREATE TABLE exchange_rates (
@@ -171,3 +180,76 @@ CREATE TABLE exchange_rates (
 
 CREATE UNIQUE INDEX idx_exchange_rates_effective_date ON exchange_rates(effective_date);
 CREATE INDEX idx_exchange_rates_created_at ON exchange_rates(created_at);
+-- ===== ROLES TABLE =====
+CREATE TABLE roles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE UNIQUE INDEX idx_roles_name ON roles(name);
+CREATE INDEX idx_roles_created_at ON roles(created_at);
+
+-- ===== USER ROLES TABLE =====
+CREATE TABLE user_roles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX idx_user_roles_user_id ON user_roles(user_id);
+CREATE INDEX idx_user_roles_role_id ON user_roles(role_id);
+CREATE INDEX idx_user_roles_created_at ON user_roles(created_at);
+
+-- ===== PERMISSIONS TABLE =====
+CREATE TABLE permissions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  resource TEXT NOT NULL,
+  action TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX idx_permissions_role_id ON permissions(role_id);
+CREATE INDEX idx_permissions_resource ON permissions(resource);
+CREATE INDEX idx_permissions_created_at ON permissions(created_at);
+
+-- ===== ALERTS TABLE =====
+CREATE TABLE alerts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL,
+  severity TEXT NOT NULL CHECK (severity IN ('info', 'warning', 'critical')),
+  entity_type TEXT NOT NULL,
+  entity_id INTEGER,
+  message TEXT NOT NULL,
+  is_dismissed INTEGER NOT NULL DEFAULT 0,
+  dismissed_at TEXT,
+  dismissed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX idx_alerts_type ON alerts(type);
+CREATE INDEX idx_alerts_severity ON alerts(severity);
+CREATE INDEX idx_alerts_entity ON alerts(entity_type, entity_id);
+CREATE INDEX idx_alerts_is_dismissed ON alerts(is_dismissed);
+CREATE INDEX idx_alerts_created_at ON alerts(created_at);
+
+-- ===== AUDIT LOGS TABLE =====
+CREATE TABLE audit_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  entity_type TEXT NOT NULL,
+  entity_id INTEGER NOT NULL,
+  action TEXT NOT NULL CHECK (action IN ('create', 'update', 'delete', 'status_change', 'payment', 'file_upload')),
+  before TEXT,
+  after TEXT,
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
+CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+CREATE INDEX idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);

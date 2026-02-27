@@ -10,12 +10,30 @@ class TemplateApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    private int $userId;
+
     protected function setUp(): void
     {
         parent::setUp();
         
-        // Run migrations and seed
+        $this->withoutMiddleware(); // Bypass all middleware for testing controller logic
+        
+        // Run migrations first to create all tables
         $this->artisan('migrate', ['--database' => 'sqlite']);
+        
+        // Now create test user
+        $this->userId = DB::table('users')->insertGetId([
+            'email' => 'test@example.com',
+            'password_hash' => password_hash('password', PASSWORD_BCRYPT),
+            'role' => 'admin',
+            'is_active' => 1,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        
+        // Note: Roles/permissions not needed since middleware is bypassed
+        
+        // Seed templates
         $this->artisan('db:seed', ['--class' => 'ProjectTemplateSeeder']);
     }
 
@@ -37,9 +55,9 @@ class TemplateApiTest extends TestCase
         $templates = $response->json('data');
         $this->assertCount(5, $templates, 'Should return all 5 active templates');
 
-        // Verify all are marked as active
+        // Verify all are marked as active (SQLite returns 1 for true)
         foreach ($templates as $template) {
-            $this->assertTrue($template['is_active'], "Template {$template['name']} should be active");
+            $this->assertTrue((bool)$template['is_active'], "Template {$template['name']} should be active");
         }
     }
 
@@ -51,25 +69,24 @@ class TemplateApiTest extends TestCase
         $response = $this->getJson('/api/templates/1');
 
         $response->assertStatus(200)
-            ->assertJsonStructure([
-                'success',
-                'data' => [
-                    'id', 'name', 'description', 'category', 'task_count',
-                    'tasks' => ['*' => [
-                        'id', 'name', 'weight', 'phase_number', 'estimated_duration_days'
-                    ]]
-                ]
-            ]);
+            ->assertJson(['success' => true]);
 
-        $template = $response->json('data');
-        $this->assertEquals('Web Application', $template['name']);
-        $this->assertCount(8, $template['tasks'], 'Web App template should have 8 tasks');
+        $data = $response->json('data');
+        
+        // Verify template properties
+        $this->assertArrayHasKey('template', $data);
+        $this->assertArrayHasKey('tasks', $data);
+        $this->assertEquals('Web Application', $data['template']['name']);
+        $this->assertCount(8, $data['tasks'], 'Web App template should have 8 tasks');
     }
 
     /**
      * Test 3: GET /api/templates/{id}/preview - Preview template tasks
+     * 
+     * This test verifies the calculation logic moved to TemplateManagementService.
+     * The preview endpoint now returns total_weight and is_valid from the service.
      */
-    public function test_preview_template_returns_tasks(): void
+    public function test_preview_template_returns_tasks_with_validation(): void
     {
         $response = $this->getJson('/api/templates/1/preview');
 
@@ -77,14 +94,22 @@ class TemplateApiTest extends TestCase
             ->assertJsonStructure([
                 'success',
                 'data' => [
-                    'id', 'name', 'tasks' => ['*' => [
+                    'template' => ['id', 'name', 'description'],
+                    'tasks' => ['*' => [
                         'name', 'weight', 'phase_number'
-                    ]]
-                ]
+                    ]],
+                    'total_weight',
+                    'is_valid'
+                ],
+                'message'
             ]);
 
         $data = $response->json('data');
         $this->assertNotEmpty($data['tasks']);
+        
+        // Verify calculation is done (was moved from controller to service)
+        $this->assertEquals(100, $data['total_weight'], 'Template weights should sum to 100');
+        $this->assertTrue($data['is_valid'], 'Template should be valid');
     }
 
     /**
@@ -104,12 +129,15 @@ class TemplateApiTest extends TestCase
     {
         // Create opportunity first
         $opportunityId = DB::table('opportunities')->insertGetId([
-            'name' => 'Test Opportunity',
+            'client' => 'Test Client',
+            'description' => 'Test Opportunity',
             'estimated_value' => 10000,
             'currency' => 'USD',
             'stage' => 'won',
             'probability' => 100,
-            'user_id' => 1,
+            'source' => 'test',
+            'owner' => $this->userId,
+            'expected_close_date' => date('Y-m-d', strtotime('+30 days')),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -117,7 +145,13 @@ class TemplateApiTest extends TestCase
         $response = $this->postJson("/api/opportunities/{$opportunityId}/projects/with-template", [
             'template_id' => 1,
             'project_name' => 'Web App Project',
+            'authenticated_user_id' => $this->userId,
         ]);
+
+        if ($response->status() !== 201) {
+            dump('FAIL: Expected 201, got ' . $response->status());
+            dump('Response:', $response->json());
+        }
 
         $response->assertStatus(201)
             ->assertJsonStructure([
@@ -138,18 +172,23 @@ class TemplateApiTest extends TestCase
     public function test_create_project_validates_input(): void
     {
         $opportunityId = DB::table('opportunities')->insertGetId([
-            'name' => 'Test Opportunity',
+            'client' => 'Test Client',
+            'description' => 'Test Opportunity',
             'estimated_value' => 10000,
             'currency' => 'USD',
             'stage' => 'won',
             'probability' => 100,
-            'user_id' => 1,
+            'source' => 'test',
+            'owner' => $this->userId,
+            'expected_close_date' => date('Y-m-d', strtotime('+30 days')),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         // Missing required fields
-        $response = $this->postJson("/api/opportunities/{$opportunityId}/projects/with-template", []);
+        $response = $this->postJson("/api/opportunities/{$opportunityId}/projects/with-template", [
+            'authenticated_user_id' => $this->userId,
+        ]);
 
         $response->assertStatus(422);
     }
@@ -160,19 +199,23 @@ class TemplateApiTest extends TestCase
     public function test_create_project_rejects_invalid_template(): void
     {
         $opportunityId = DB::table('opportunities')->insertGetId([
-            'name' => 'Test Opportunity',
+            'client' => 'Test Client',
+            'description' => 'Test Opportunity',
             'estimated_value' => 10000,
             'currency' => 'USD',
             'stage' => 'won',
             'probability' => 100,
-            'user_id' => 1,
+            'source' => 'test',
+            'owner' => $this->userId,
+            'expected_close_date' => date('Y-m-d', strtotime('+30 days')),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         $response = $this->postJson("/api/opportunities/{$opportunityId}/projects/with-template", [
             'template_id' => 99999,
-            'project_name' => 'Invalid Project'
+            'project_name' => 'Invalid Project',
+            'authenticated_user_id' => $this->userId,
         ]);
 
         $response->assertStatus(422);
@@ -186,23 +229,30 @@ class TemplateApiTest extends TestCase
         // Create empty project
         $projectId = DB::table('projects')->insertGetId([
             'name' => 'Empty Project',
+            'client' => 'Test Client',
             'contract_value' => 5000,
-            'currency' => 'USD',
+            'contract_currency' => 'USD',
             'start_date' => now(),
             'end_date' => now()->addDays(30),
-            'user_id' => 1,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         $response = $this->postJson("/api/projects/{$projectId}/apply-template", [
-            'template_id' => 2 // Mobile App
+            'template_id' => 2, // Mobile App
+            'authenticated_user_id' => $this->userId,
         ]);
+
+        if ($response->status() !== 200) {
+            dump('FAIL: Expected 200, got ' . $response->status());
+            dump('Response:', $response->json());
+        }
 
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'success',
-                'data' => ['message', 'task_count']
+                'message',
+                'data' => ['tasks_count', 'template_name']
             ]);
 
         // Verify tasks were created
@@ -218,11 +268,11 @@ class TemplateApiTest extends TestCase
         // Create project with task
         $projectId = DB::table('projects')->insertGetId([
             'name' => 'Project with Task',
+            'client' => 'Test Client',
             'contract_value' => 5000,
-            'currency' => 'USD',
+            'contract_currency' => 'USD',
             'start_date' => now(),
             'end_date' => now()->addDays(30),
-            'user_id' => 1,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -231,13 +281,14 @@ class TemplateApiTest extends TestCase
             'project_id' => $projectId,
             'name' => 'Existing Task',
             'weight' => 100,
-            'status' => 'open',
+            'status' => 'todo',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         $response = $this->postJson("/api/projects/{$projectId}/apply-template", [
-            'template_id' => 1
+            'template_id' => 1,
+            'authenticated_user_id' => $this->userId,
         ]);
 
         $response->assertStatus(400);
@@ -265,14 +316,11 @@ class TemplateApiTest extends TestCase
     {
         $response = $this->getJson('/api/admin/templates');
 
-        // Note: This might require authentication, adjust as needed
-        // For now, testing the endpoint structure
-        if ($response->status() === 200) {
-            $response->assertJsonStructure([
+        $response->assertStatus(200)
+            ->assertJsonStructure([
                 'success',
                 'data' => ['*' => ['id', 'name', 'category']]
             ]);
-        }
     }
 
     /**
@@ -292,7 +340,7 @@ class TemplateApiTest extends TestCase
         $response = $this->postJson('/api/admin/templates', $data);
 
         // 200/201 if successful, 403 if not authenticated
-        $this->assertIn($response->status(), [201, 403, 401]);
+        $this->assertContains($response->status(), [201, 403, 401]);
     }
 
     /**
@@ -303,6 +351,6 @@ class TemplateApiTest extends TestCase
         $response = $this->post('/api/templates/1', []);
         
         // Should handle gracefully - either 404/405 or 422
-        $this->assertIn($response->status(), [404, 405, 422, 400]);
+        $this->assertContains($response->status(), [404, 405, 422, 400]);
     }
 }

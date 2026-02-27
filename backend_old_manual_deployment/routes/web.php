@@ -133,6 +133,13 @@ Route::middleware(['check.permission:opportunities,edit'])->group(function () {
     Route::get('/opportunities/{opportunityId}/edit', [OpportunityController::class, 'edit'])->name('opportunities.edit');
 });
 
+// Project Templates routes (Phase 5.4 - Frontend Integration)
+Route::middleware(['check.permission:opportunities,view'])->group(function () {
+    Route::get('/opportunities/{opportunityId}/create-project-with-template', [OpportunityController::class, 'showTemplateSelection'])->name('opportunities.template-selection');
+    Route::post('/opportunities/{opportunityId}/create-project-with-template', [OpportunityController::class, 'createProjectWithTemplate'])->name('opportunities.create-project-with-template');
+    Route::get('/projects/{projectId}/apply-template', [OpportunityController::class, 'showApplyTemplate'])->name('projects.apply-template');
+});
+
 // Accounts management routes (protected)
 Route::middleware(['check.permission:accounts,view'])->group(function () {
     Route::get('/accounts', [AccountController::class, 'index'])->name('accounts.index');

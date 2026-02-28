@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * DashboardApiTest
@@ -57,7 +58,7 @@ class DashboardApiTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_requires_authentication_for_dashboard_summary()
     {
         $response = $this->getJson('/api/dashboard/summary');
@@ -65,7 +66,7 @@ class DashboardApiTest extends TestCase
         $response->assertStatus(401);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_dashboard_summary_with_correct_structure()
     {
         // Create test data
@@ -113,7 +114,7 @@ class DashboardApiTest extends TestCase
         $this->assertEquals('USD', $response->json('currency'));
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_cash_at_hand_correctly()
     {
         $accountId = DB::table('accounts')->insertGetId([
@@ -140,7 +141,7 @@ class DashboardApiTest extends TestCase
         $this->assertEquals(7000, $response->json('cash_at_hand'));
     }
 
-    /** @test */
+    #[Test]
     public function it_filters_by_currency()
     {
         // Create USD account
@@ -174,7 +175,7 @@ class DashboardApiTest extends TestCase
         $this->assertEquals(5000000, $ugxResponse->json('cash_at_hand'));
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_zero_values_for_empty_database()
     {
         $response = $this->actingAs((object)['id' => $this->userId])

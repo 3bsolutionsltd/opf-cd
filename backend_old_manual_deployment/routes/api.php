@@ -20,6 +20,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\LeadQualificationController;
 
 // Health check endpoint (public, no authentication required)
 Route::get('/health', [HealthCheckController::class, 'check']);
@@ -150,6 +151,7 @@ Route::middleware(['check.permission:opportunities,view'])->group(function () {
     Route::get('/opportunities', [OpportunityController::class, 'apiIndex']);
     Route::get('/opportunities/{opportunityId}', [OpportunityController::class, 'apiShow']);
     Route::get('/opportunities/{opportunityId}/projects', [OpportunityController::class, 'getProjects']);
+    Route::get('/opportunities/{opportunityId}/qualify', [LeadQualificationController::class, 'score']);
 });
 
 Route::middleware(['check.permission:opportunities,create'])->group(function () {

@@ -150,6 +150,14 @@ CREATE TABLE opportunities (
   source TEXT NOT NULL,
   owner INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   expected_close_date TEXT NOT NULL,
+  qualification_score INTEGER NOT NULL DEFAULT 0 CHECK (qualification_score >= 0 AND qualification_score <= 100),
+  budget_confirmed TEXT NOT NULL DEFAULT 'unknown' CHECK (budget_confirmed IN ('yes', 'no', 'unknown')),
+  authority_level TEXT NOT NULL DEFAULT 'unknown' CHECK (authority_level IN ('decision_maker', 'influencer', 'user', 'unknown')),
+  need_validation TEXT NOT NULL DEFAULT 'unknown' CHECK (need_validation IN ('critical', 'important', 'nice_to_have', 'unknown')),
+  timeline_urgency TEXT NOT NULL DEFAULT 'unclear' CHECK (timeline_urgency IN ('immediate', 'this_quarter', 'next_quarter', 'unclear')),
+  strategic_fit TEXT NOT NULL DEFAULT 'cold_lead' CHECK (strategic_fit IN ('existing_client', 'referral', 'target_industry', 'cold_lead')),
+  disqualification_reason TEXT NULL,
+  last_contact_date TEXT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

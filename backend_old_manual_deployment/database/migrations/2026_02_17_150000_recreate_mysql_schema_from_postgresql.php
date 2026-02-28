@@ -18,10 +18,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Skip if not MySQL
-        if (DB::getDriverName() !== 'mysql') {
+        // Skip if not MySQL or SQLite
+        if (!in_array(DB::getDriverName(), ['mysql', 'sqlite'])) {
             return;
         }
+
+        $isMySQL = DB::getDriverName() === 'mysql';
 
         // Drop all existing tables in reverse dependency order
         Schema::dropIfExists('audit_logs');
@@ -81,9 +83,11 @@ return new class extends Migration
             $table->index('created_at');
         });
         
-        // Add check constraints
-        DB::statement('ALTER TABLE projects ADD CONSTRAINT chk_projects_contract_value CHECK (contract_value >= 0)');
-        DB::statement('ALTER TABLE projects ADD CONSTRAINT chk_projects_valid_date_range CHECK (end_date >= start_date)');
+        // Add check constraints (MySQL only — SQLite does not support ALTER TABLE ADD CONSTRAINT)
+        if ($isMySQL) {
+            DB::statement('ALTER TABLE projects ADD CONSTRAINT chk_projects_contract_value CHECK (contract_value >= 0)');
+            DB::statement('ALTER TABLE projects ADD CONSTRAINT chk_projects_valid_date_range CHECK (end_date >= start_date)');
+        }
 
         //=================================================================
         // 3. TASKS TABLE
@@ -108,9 +112,11 @@ return new class extends Migration
             $table->index('created_at');
         });
         
-        DB::statement('ALTER TABLE tasks ADD CONSTRAINT chk_tasks_weight CHECK (weight >= 0 AND weight <= 100)');
-        DB::statement('ALTER TABLE tasks ADD CONSTRAINT chk_tasks_progress CHECK (progress >= 0 AND progress <= 100)');
-        DB::statement('ALTER TABLE tasks ADD CONSTRAINT chk_tasks_valid_date_range CHECK (due_date IS NULL OR start_date IS NULL OR due_date >= start_date)');
+        if ($isMySQL) {
+            DB::statement('ALTER TABLE tasks ADD CONSTRAINT chk_tasks_weight CHECK (weight >= 0 AND weight <= 100)');
+            DB::statement('ALTER TABLE tasks ADD CONSTRAINT chk_tasks_progress CHECK (progress >= 0 AND progress <= 100)');
+            DB::statement('ALTER TABLE tasks ADD CONSTRAINT chk_tasks_valid_date_range CHECK (due_date IS NULL OR start_date IS NULL OR due_date >= start_date)');
+        }
 
         //=================================================================
         // 4. PAYMENT_MILESTONES TABLE
@@ -131,7 +137,9 @@ return new class extends Migration
             $table->index('created_at');
         });
         
-        DB::statement('ALTER TABLE payment_milestones ADD CONSTRAINT chk_payment_milestones_amount CHECK (amount >= 0)');
+        if ($isMySQL) {
+            DB::statement('ALTER TABLE payment_milestones ADD CONSTRAINT chk_payment_milestones_amount CHECK (amount >= 0)');
+        }
         
         // Create milestones view
         DB::statement('CREATE VIEW milestones AS SELECT * FROM payment_milestones');
@@ -159,7 +167,9 @@ return new class extends Migration
             $table->index('created_at');
         });
         
-        DB::statement('ALTER TABLE expenses ADD CONSTRAINT chk_expenses_amount CHECK (amount >= 0)');
+        if ($isMySQL) {
+            DB::statement('ALTER TABLE expenses ADD CONSTRAINT chk_expenses_amount CHECK (amount >= 0)');
+        }
 
         //=================================================================
         // 6. ACCOUNTS TABLE
@@ -177,7 +187,9 @@ return new class extends Migration
             $table->index('created_at');
         });
         
-        DB::statement('ALTER TABLE accounts ADD CONSTRAINT chk_accounts_opening_balance CHECK (opening_balance >= 0)');
+        if ($isMySQL) {
+            DB::statement('ALTER TABLE accounts ADD CONSTRAINT chk_accounts_opening_balance CHECK (opening_balance >= 0)');
+        }
 
         //=================================================================
         // 7. CASH_TRANSACTIONS TABLE
@@ -200,7 +212,9 @@ return new class extends Migration
             $table->index('created_at');
         });
         
-        DB::statement('ALTER TABLE cash_transactions ADD CONSTRAINT chk_cash_transactions_amount CHECK (amount > 0)');
+        if ($isMySQL) {
+            DB::statement('ALTER TABLE cash_transactions ADD CONSTRAINT chk_cash_transactions_amount CHECK (amount > 0)');
+        }
 
         //=================================================================
         // 8. OPPORTUNITIES TABLE
@@ -215,6 +229,15 @@ return new class extends Migration
             $table->string('source', 100);
             $table->foreignId('owner')->constrained('users')->restrictOnDelete();
             $table->date('expected_close_date');
+            // BANT lead qualification fields
+            $table->integer('qualification_score')->default(0);
+            $table->enum('budget_confirmed', ['yes', 'no', 'unknown'])->default('unknown');
+            $table->enum('authority_level', ['decision_maker', 'influencer', 'user', 'unknown'])->default('unknown');
+            $table->enum('need_validation', ['critical', 'important', 'nice_to_have', 'unknown'])->default('unknown');
+            $table->enum('timeline_urgency', ['immediate', 'this_quarter', 'next_quarter', 'unclear'])->default('unclear');
+            $table->enum('strategic_fit', ['existing_client', 'referral', 'target_industry', 'cold_lead'])->default('cold_lead');
+            $table->text('disqualification_reason')->nullable();
+            $table->date('last_contact_date')->nullable();
             $table->timestampsTz();
             
             $table->index('stage');
@@ -223,8 +246,10 @@ return new class extends Migration
             $table->index('created_at');
         });
         
-        DB::statement('ALTER TABLE opportunities ADD CONSTRAINT chk_opportunities_estimated_value CHECK (estimated_value >= 0)');
-        DB::statement('ALTER TABLE opportunities ADD CONSTRAINT chk_opportunities_probability CHECK (probability >= 0 AND probability <= 100)');
+        if ($isMySQL) {
+            DB::statement('ALTER TABLE opportunities ADD CONSTRAINT chk_opportunities_estimated_value CHECK (estimated_value >= 0)');
+            DB::statement('ALTER TABLE opportunities ADD CONSTRAINT chk_opportunities_probability CHECK (probability >= 0 AND probability <= 100)');
+        }
 
         //=================================================================
         // 9. EXCHANGE_RATES TABLE
@@ -240,9 +265,11 @@ return new class extends Migration
             $table->index('created_at');
         });
         
-        DB::statement('ALTER TABLE exchange_rates ADD CONSTRAINT chk_exchange_rates_base CHECK (base_currency = \'UGX\')');
-        DB::statement('ALTER TABLE exchange_rates ADD CONSTRAINT chk_exchange_rates_quote CHECK (quote_currency = \'USD\')');
-        DB::statement('ALTER TABLE exchange_rates ADD CONSTRAINT chk_exchange_rates_rate CHECK (rate > 0)');
+        if ($isMySQL) {
+            DB::statement('ALTER TABLE exchange_rates ADD CONSTRAINT chk_exchange_rates_base CHECK (base_currency = \'UGX\')');
+            DB::statement('ALTER TABLE exchange_rates ADD CONSTRAINT chk_exchange_rates_quote CHECK (quote_currency = \'USD\')');
+            DB::statement('ALTER TABLE exchange_rates ADD CONSTRAINT chk_exchange_rates_rate CHECK (rate > 0)');
+        }
 
         //=================================================================
         // 10. ROLES TABLE
@@ -338,8 +365,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Skip if not MySQL
-        if (DB::getDriverName() !== 'mysql') {
+        // Skip if not MySQL or SQLite
+        if (!in_array(DB::getDriverName(), ['mysql', 'sqlite'])) {
             return;
         }
 

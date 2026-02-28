@@ -37,6 +37,14 @@ class UpdateOpportunityRequest extends FormRequest
             'source' => 'sometimes|required|string|max:100',
             'owner' => 'sometimes|required|integer|exists:users,id',
             'expected_close_date' => 'sometimes|required|date',
+            // BANT lead qualification fields (optional)
+            'budget_confirmed' => 'sometimes|in:yes,no,unknown',
+            'authority_level' => 'sometimes|in:decision_maker,influencer,user,unknown',
+            'need_validation' => 'sometimes|in:critical,important,nice_to_have,unknown',
+            'timeline_urgency' => 'sometimes|in:immediate,this_quarter,next_quarter,unclear',
+            'strategic_fit' => 'sometimes|in:existing_client,referral,target_industry,cold_lead',
+            'disqualification_reason' => 'sometimes|nullable|string',
+            'last_contact_date' => 'sometimes|nullable|date',
         ];
     }
 

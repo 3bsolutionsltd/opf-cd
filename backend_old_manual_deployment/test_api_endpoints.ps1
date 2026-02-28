@@ -233,14 +233,14 @@ Write-Host ""
 Write-Host "=== PERFORMANCE BENCHMARKS ===" -ForegroundColor Yellow
 Write-Host ""
 
-Write-Host "Testing response times (should be < 200ms for GET, < 500ms for POST):" -ForegroundColor Gray
+Write-Host "Testing response times (should be [less than] 200ms for GET, [less than] 500ms for POST):" -ForegroundColor Gray
 
 for ($i = 1; $i -le 3; $i++) {
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     $response = Invoke-WebRequest -Uri "$API_BASE/templates" -Method GET
     $sw.Stop()
     
-    Write-Host "  Iteration $i: GET /api/templates = $($sw.ElapsedMilliseconds)ms" -ForegroundColor Gray
+    Write-Host "  Iteration $i : GET /api/templates = $($sw.ElapsedMilliseconds)ms" -ForegroundColor Gray
 }
 
 Write-Host ""

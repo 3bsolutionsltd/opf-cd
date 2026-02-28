@@ -12,8 +12,13 @@ class ProjectTemplateSeeder extends Seeder
      */
     public function run(): void
     {
-        // Disable foreign keys check temporarily
-        DB::statement('SET CONSTRAINTS ALL DEFERRED');
+        // Disable foreign keys check temporarily (database-specific)
+        $driver = DB::connection()->getDriverName();
+        if ($driver === 'pgsql') {
+            DB::statement('SET CONSTRAINTS ALL DEFERRED');
+        } elseif ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = OFF');
+        }
 
         // 1. Web Application Template
         $webAppId = DB::table('project_templates')->insertGetId([
@@ -487,7 +492,11 @@ class ProjectTemplateSeeder extends Seeder
         ]);
 
         // Re-enable foreign keys check
-        DB::statement('SET CONSTRAINTS ALL IMMEDIATE');
+        if ($driver === 'pgsql') {
+            DB::statement('SET CONSTRAINTS ALL IMMEDIATE');
+        } elseif ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = ON');
+        }
 
         echo "✅ Project templates seeded successfully with 5 templates and 36 tasks!\n";
     }

@@ -190,6 +190,51 @@ Do NOT modify existing files beyond what is explicitly requested.
 
 ---
 
+## PROMPT — TASK BREAKDOWN (`*._TASK_BREAKDOWN.md`)
+
+Use this prompt to generate a `_TASK_BREAKDOWN.md` file for a planned feature.
+
+Naming convention: `FEATURE_NAME._TASK_BREAKDOWN.md`
+
+Purpose:
+- Produce a structured, minimal implementation plan for a new feature
+- Break the feature into ordered phases and atomic tasks
+- Identify services, controllers, migrations, and routes required
+- Serve as the authoritative checklist before any code is written
+
+Prompt:
+
+Follow the rules in docs/copilot_rules.md.
+
+You are producing a `_TASK_BREAKDOWN.md` for the following feature:
+
+Feature Name: <FEATURE NAME>
+
+Relevant spec section from docs/_truth.md:
+<PASTE RELEVANT SECTION>
+
+Rules:
+- Break the feature into sequentially numbered phases (e.g. Phase X.1, X.2 …)
+- Each phase contains atomic, testable tasks
+- Each task names exactly ONE artefact: migration, service, controller, route, or view
+- No task may combine multiple artefacts
+- No task may include future-proofing, abstractions, or optimisations
+- No task may add functionality not stated in the spec
+- List dependent tasks in order (migrations before services, services before controllers)
+
+Output format (repeat for each phase):
+
+### Phase X.N — <Phase Title>
+
+- [ ] Task 1: <one artefact, one action>
+- [ ] Task 2: <one artefact, one action>
+
+Do NOT explain.
+Do NOT suggest improvements.
+Do NOT add tasks beyond what is explicitly required by the spec.
+
+---
+
 ## FINAL NOTE
 
 - docs/copilot_rules.md = LAW

@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Schedule alert evaluations to run daily at midnight
 Schedule::command('alerts:evaluate')->daily();
+
+// Schedule business metrics calculation to run daily at 1 AM
+Schedule::command('metrics:calculate')->dailyAt('01:00');

@@ -167,3 +167,10 @@ Route::middleware(['check.permission:cash_transactions,create'])->group(function
 Route::middleware(['check.permission:dashboards,view'])->group(function () {
     Route::get('/admin/templates', [AdminTemplateController::class, 'index'])->name('admin.templates.index');
 });
+
+// Business Health KPIs dashboard (Phase 5.2)
+Route::middleware(['check.permission:dashboards,view'])->group(function () {
+    Route::get('/metrics/dashboard', function () {
+        return view('metrics.dashboard');
+    })->name('metrics.dashboard');
+});

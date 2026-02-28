@@ -20,6 +20,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\BusinessMetricsController;
+use App\Http\Controllers\GoalTrackingController;
 
 // Health check endpoint (public, no authentication required)
 Route::get('/health', [HealthCheckController::class, 'check']);
@@ -241,6 +243,28 @@ Route::middleware(['check.permission:dashboards,view'])->group(function () {
     Route::post('/admin/templates/{id}/tasks', [TemplateController::class, 'addTask']); // Add task to template
     Route::put('/admin/templates/tasks/{taskId}', [TemplateController::class, 'updateTask']); // Update task
     Route::delete('/admin/templates/tasks/{taskId}', [TemplateController::class, 'deleteTask']); // Delete task
+});
+
+// Business Health Metrics endpoints (Phase 5.2 - Business Health KPIs & KPAs)
+Route::middleware(['check.permission:dashboards,view'])->group(function () {
+    Route::get('/metrics/opportunity-conversion-rate', [BusinessMetricsController::class, 'getOpportunityConversionRate']);
+    Route::get('/metrics/sales-velocity', [BusinessMetricsController::class, 'getSalesVelocity']);
+    Route::get('/metrics/pipeline-value', [BusinessMetricsController::class, 'getPipelineValue']);
+    Route::get('/metrics/opportunity-to-project-conversion', [BusinessMetricsController::class, 'getOpportunityToProjectConversion']);
+    Route::get('/metrics/average-deal-size', [BusinessMetricsController::class, 'getAverageDealSize']);
+    Route::get('/metrics/stage-conversion-rates', [BusinessMetricsController::class, 'getStageConversionRates']);
+});
+
+// Business Goals endpoints (Phase 5.2 - Goal Tracking)
+Route::middleware(['check.permission:dashboards,view'])->group(function () {
+    Route::get('/goals', [GoalTrackingController::class, 'index']);
+    Route::get('/goals/{id}', [GoalTrackingController::class, 'show']);
+    Route::get('/goals/{id}/prescriptive-actions', [GoalTrackingController::class, 'prescriptiveActions']);
+    Route::put('/goals/update-progress', [GoalTrackingController::class, 'updateProgress']);
+});
+
+Route::middleware(['check.permission:dashboards,view'])->group(function () {
+    Route::post('/goals', [GoalTrackingController::class, 'store']);
 });
 
 }); // End web middleware group

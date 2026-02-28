@@ -6,6 +6,7 @@ use App\Services\MilestoneManagementService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Tests for Milestone Management Service - Payment Prevention
@@ -25,7 +26,7 @@ class MilestoneManagementServiceTest extends TestCase
         $this->service = new MilestoneManagementService();
     }
 
-    /** @test */
+    #[Test]
     public function it_prevents_direct_marking_as_paid()
     {
         // Arrange: Create a project
@@ -67,7 +68,7 @@ class MilestoneManagementServiceTest extends TestCase
         $this->assertEquals('pending', $milestone->status);
     }
 
-    /** @test */
+    #[Test]
     public function it_allows_updating_to_invoiced()
     {
         // Arrange: Create a project
@@ -107,7 +108,7 @@ class MilestoneManagementServiceTest extends TestCase
         $this->assertEquals('invoiced', $milestone->status);
     }
 
-    /** @test */
+    #[Test]
     public function it_prevents_editing_paid_milestones()
     {
         // Arrange: Create a project

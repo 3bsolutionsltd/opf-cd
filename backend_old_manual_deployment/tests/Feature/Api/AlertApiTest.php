@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * AlertApiTest
@@ -57,14 +58,14 @@ class AlertApiTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_requires_authentication_for_alerts()
     {
         $response = $this->getJson('/api/alerts');
         $response->assertStatus(401);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_active_alerts_only()
     {
         // Create active alert
@@ -113,7 +114,7 @@ class AlertApiTest extends TestCase
         $this->assertCount(1, $response->json('alerts'));
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_alert_counts_by_severity()
     {
         DB::table('alerts')->insert([
@@ -139,7 +140,7 @@ class AlertApiTest extends TestCase
             ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_dismisses_alert_successfully()
     {
         $alertId = DB::table('alerts')->insertGetId([
@@ -164,7 +165,7 @@ class AlertApiTest extends TestCase
         $this->assertTrue($alert->is_dismissed);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_404_for_non_existent_alert()
     {
         $response = $this->actingAs((object)['id' => $this->userId])

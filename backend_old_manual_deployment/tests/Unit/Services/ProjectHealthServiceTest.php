@@ -8,6 +8,7 @@ use App\Services\ProjectProgressService;
 use App\Services\PaymentGapService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * ProjectHealthServiceTest
@@ -52,7 +53,7 @@ class ProjectHealthServiceTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_phi_score_for_healthy_project()
     {
         // Create balanced project data
@@ -81,7 +82,7 @@ class ProjectHealthServiceTest extends TestCase
         $this->assertLessThanOrEqual(100, $health['phi_score']);
     }
 
-    /** @test */
+    #[Test]
     public function it_classifies_health_status_correctly()
     {
         // Test green status (PHI >= 70)
@@ -108,7 +109,7 @@ class ProjectHealthServiceTest extends TestCase
         $this->assertContains($health['status'], ['green', 'amber', 'red']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_correct_signal_structure()
     {
         DB::table('tasks')->insert([
@@ -125,7 +126,7 @@ class ProjectHealthServiceTest extends TestCase
         $this->assertArrayHasKey('overdue_score', $health['signals']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_project_with_no_tasks()
     {
         $health = $this->service->getProjectHealth($this->projectId);
@@ -134,7 +135,7 @@ class ProjectHealthServiceTest extends TestCase
         $this->assertIsFloat($health['phi_score']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_blocked_tasks()
     {
         DB::table('tasks')->insert([
@@ -150,7 +151,7 @@ class ProjectHealthServiceTest extends TestCase
         $this->assertLessThan(100, $health['signals']['blocker_score']);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_overdue_milestones()
     {
         DB::table('payment_milestones')->insert([
@@ -166,7 +167,7 @@ class ProjectHealthServiceTest extends TestCase
         $this->assertLessThan(100, $health['signals']['overdue_score']);
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_payment_gap_correctly()
     {
         // Create unbalanced payment situation

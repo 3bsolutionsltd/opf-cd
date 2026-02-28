@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * ReportExportApiTest
@@ -68,14 +69,14 @@ class ReportExportApiTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_requires_authentication_for_report_exports()
     {
         $response = $this->get('/api/reports/export/cash-flow');
         $response->assertStatus(401);
     }
 
-    /** @test */
+    #[Test]
     public function it_exports_cash_flow_report_as_csv()
     {
         // Create transactions
@@ -113,7 +114,7 @@ class ReportExportApiTest extends TestCase
         $this->assertStringContainsString('Office rent', $csv);
     }
 
-    /** @test */
+    #[Test]
     public function it_exports_project_health_report_as_csv()
     {
         // Create project
@@ -149,7 +150,7 @@ class ReportExportApiTest extends TestCase
         $this->assertStringContainsString('ABC Corp', $csv);
     }
 
-    /** @test */
+    #[Test]
     public function it_exports_expenses_report_as_csv()
     {
         DB::table('expenses')->insert([
@@ -187,7 +188,7 @@ class ReportExportApiTest extends TestCase
         $this->assertStringNotContainsString('Office Supplies', $csv);  // Filtered out (paid)
     }
 
-    /** @test */
+    #[Test]
     public function it_exports_opportunities_report_as_csv()
     {
         DB::table('opportunities')->insert([
@@ -223,7 +224,7 @@ class ReportExportApiTest extends TestCase
         $this->assertStringContainsString('Brand Identity', $csv);
     }
 
-    /** @test */
+    #[Test]
     public function it_filters_cash_flow_by_date_range()
     {
         DB::table('cash_transactions')->insert([
@@ -257,7 +258,7 @@ class ReportExportApiTest extends TestCase
         $this->assertStringNotContainsString('Old transaction', $csv);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_empty_csv_when_no_data_matches_filters()
     {
         $response = $this->actingAs((object)['id' => $this->userId])

@@ -15,7 +15,16 @@ RUN apk add --no-cache \
     nodejs \
     npm \
     supervisor \
-    nginx
+    nginx \
+    oniguruma-dev \
+    libzip-dev \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    icu-dev
+
+# Configure GD extension
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 
 # Install PHP extensions required by Laravel
 RUN docker-php-ext-install \
@@ -26,7 +35,8 @@ RUN docker-php-ext-install \
     bcmath \
     gd \
     xml \
-    zip
+    zip \
+    intl
 
 # Install Redis extension
 RUN apk add --no-cache $PHPIZE_DEPS \

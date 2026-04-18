@@ -55,7 +55,8 @@ COPY backend_old_manual_deployment/ /var/www/
 COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Strip Windows CRLF line endings and make executable
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 # Set proper permissions
 RUN chown -R www:www /var/www \

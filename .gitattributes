@@ -1,0 +1,7 @@
+# Ensure shell scripts always use LF line endings on all platforms
+*.sh text eol=lf
+
+# Ensure these config files always use LF
+*.conf text eol=lf
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf

@@ -54,6 +54,8 @@ RUN addgroup -g 1000 www && adduser -u 1000 -G www -s /bin/sh -D www
 COPY backend_old_manual_deployment/ /var/www/
 COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Set proper permissions
 RUN chown -R www:www /var/www \
@@ -69,16 +71,8 @@ RUN php artisan key:generate --ansi
 
 USER root
 
-# Create storage directories
-RUN mkdir -p /var/www/storage/logs \
-    && mkdir -p /var/www/storage/framework/cache \
-    && mkdir -p /var/www/storage/framework/sessions \
-    && mkdir -p /var/www/storage/framework/views \
-    && mkdir -p /var/www/storage/app/public \
-    && chown -R www:www /var/www/storage
-
 # Expose port 9000 for PHP-FPM
 EXPOSE 9000
 
-# Use supervisor to manage processes
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Entrypoint creates required dirs, fixes permissions, then starts supervisord
+CMD ["/entrypoint.sh"]

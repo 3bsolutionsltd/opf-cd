@@ -27,6 +27,8 @@ services:
       - SESSION_DRIVER=redis
       - QUEUE_CONNECTION=redis
       - REDIS_HOST=opfcd-redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-opfcd_redis_2026}
+      - REDIS_PORT=6379
     depends_on:
       - opfcd-database
       - opfcd-redis
@@ -97,7 +99,12 @@ services:
     environment:
       - APP_ENV=production
       - DB_HOST=opfcd-database
+      - DB_DATABASE=opfcd
+      - DB_USERNAME=opfcd_user
+      - DB_PASSWORD=${DB_PASSWORD:-opfcd_secure_password_2026}
       - REDIS_HOST=opfcd-redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-opfcd_redis_2026}
+      - REDIS_PORT=6379
     depends_on:
       - opfcd-database
       - opfcd-redis
@@ -117,7 +124,12 @@ services:
     environment:
       - APP_ENV=production
       - DB_HOST=opfcd-database
+      - DB_DATABASE=opfcd
+      - DB_USERNAME=opfcd_user
+      - DB_PASSWORD=${DB_PASSWORD:-opfcd_secure_password_2026}
       - REDIS_HOST=opfcd-redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-opfcd_redis_2026}
+      - REDIS_PORT=6379
     depends_on:
       - opfcd-database
       - opfcd-redis

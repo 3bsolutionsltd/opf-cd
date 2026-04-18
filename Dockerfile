@@ -53,6 +53,7 @@ RUN addgroup -g 1000 www && adduser -u 1000 -G www -s /bin/sh -D www
 # Copy application files
 COPY backend_old_manual_deployment/ /var/www/
 COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
+COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh /entrypoint.sh
 # Strip Windows CRLF line endings and make executable

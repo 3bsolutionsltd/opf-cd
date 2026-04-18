@@ -74,6 +74,7 @@ RUN mkdir -p /var/www/storage/logs \
     && mkdir -p /var/www/storage/framework/cache \
     && mkdir -p /var/www/storage/framework/sessions \
     && mkdir -p /var/www/storage/framework/views \
+    && mkdir -p /var/www/storage/app/public \
     && chown -R www:www /var/www/storage
 
 # Expose port 9000 for PHP-FPM

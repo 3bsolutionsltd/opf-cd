@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login - OPF-CD</title>
+    <title>Forgot Password - OPF-CD</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,27 +16,33 @@
 </head>
 <body class="h-full bg-slate-950 text-gray-100">
     <div class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8" x-data="loginForm()">
+        <div class="max-w-md w-full space-y-8" x-data="forgotPasswordForm()">
             <!-- Logo/Header -->
             <div>
                 <div class="mx-auto h-16 w-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
                     <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
                     </svg>
                 </div>
                 <h2 class="mt-6 text-center text-3xl font-bold tracking-tight">
-                    OPF-CD
+                    Forgot Password
                 </h2>
                 <p class="mt-2 text-center text-sm text-gray-400">
-                    Operations, Projects & Finance Command Dashboard
+                    Enter your email and we'll send you a reset link
                 </p>
             </div>
 
-            <!-- Login Form -->
-            <form class="mt-8 space-y-6" @submit.prevent="submitLogin">
+            <!-- Form -->
+            <form class="mt-8 space-y-6" @submit.prevent="submit">
                 <div class="rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 p-8 space-y-6">
+
+                    <!-- Success Message -->
+                    <div x-show="successMessage" x-cloak class="rounded-lg bg-green-500/10 border border-green-500/30 p-4">
+                        <p class="text-sm text-green-400" x-text="successMessage"></p>
+                    </div>
+
                     <!-- Error Message -->
-                    <div x-show="errorMessage" class="rounded-lg bg-red-500/10 border border-red-500/30 p-4">
+                    <div x-show="errorMessage" x-cloak class="rounded-lg bg-red-500/10 border border-red-500/30 p-4">
                         <p class="text-sm text-red-400" x-text="errorMessage"></p>
                     </div>
 
@@ -45,110 +51,88 @@
                         <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
                             Email Address
                         </label>
-                        <input 
-                            id="email" 
-                            name="email" 
-                            type="email" 
-                            required 
+                        <input
+                            id="email"
+                            name="email"
+                            type="email"
+                            required
                             x-model="email"
-                            class="block w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-gray-100 placeholder-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all"
+                            :disabled="sent"
+                            class="block w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-gray-100 placeholder-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all disabled:opacity-50"
                             placeholder="you@company.com"
-                        >
-                    </div>
-
-                    <!-- Password Field -->
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
-                            Password
-                        </label>
-                        <input 
-                            id="password" 
-                            name="password" 
-                            type="password" 
-                            required 
-                            x-model="password"
-                            class="block w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-gray-100 placeholder-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all"
-                            placeholder="••••••••"
                         >
                     </div>
 
                     <!-- Submit Button -->
                     <div>
-                        <button 
-                            type="submit" 
-                            :disabled="loading"
+                        <button
+                            type="submit"
+                            :disabled="loading || sent"
                             class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <span x-show="!loading">Sign in</span>
+                            <span x-show="!loading && !sent">Send Reset Link</span>
                             <span x-show="loading" class="flex items-center">
                                 <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                Signing in...
+                                Sending...
                             </span>
+                            <span x-show="sent && !loading">Link Sent</span>
                         </button>
-                    </div>
-
-                    <!-- Forgot Password -->
-                    <div class="text-center">
-                        <a href="{{ route('password.request') }}" class="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
-                            Forgot your password?
-                        </a>
                     </div>
                 </div>
             </form>
 
-            @if(app()->environment('local'))
-            <!-- Development Credentials (local only) -->
-            <div class="rounded-lg bg-blue-500/10 border border-blue-500/30 p-4 text-xs text-gray-400">
-                <p class="font-medium text-blue-400 mb-2">Development Credentials:</p>
-                <p>Email: admin@opf-cd.local</p>
-                <p>Password: password</p>
-            </div>
-            @endif
+            <!-- Back to Login -->
+            <p class="text-center text-sm text-gray-400">
+                <a href="/login" class="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+                    &larr; Back to login
+                </a>
+            </p>
         </div>
     </div>
 
     <script>
-        function loginForm() {
+        function forgotPasswordForm() {
             return {
                 email: '',
-                password: '',
                 loading: false,
+                sent: false,
+                successMessage: '',
                 errorMessage: '',
 
-                async submitLogin() {
+                async submit() {
                     this.loading = true;
                     this.errorMessage = '';
+                    this.successMessage = '';
 
                     try {
-                        const response = await fetch('/login', {
+                        const response = await fetch('/forgot-password', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
                             },
-                            body: JSON.stringify({
-                                email: this.email,
-                                password: this.password
-                            })
+                            body: JSON.stringify({ email: this.email }),
                         });
 
                         const data = await response.json();
 
-                        if (data.success) {
-                            window.location.href = '/dashboard';
+                        if (response.status === 429) {
+                            this.errorMessage = data.message;
                         } else {
-                            this.errorMessage = data.message || 'Login failed. Please try again.';
+                            this.successMessage = data.message;
+                            this.sent = true;
                         }
-                    } catch (error) {
-                        this.errorMessage = 'An error occurred. Please try again.';
+                    } catch (e) {
+                        this.errorMessage = 'An unexpected error occurred. Please try again.';
                     } finally {
                         this.loading = false;
                     }
                 }
-            }
+            };
         }
     </script>
 </body>

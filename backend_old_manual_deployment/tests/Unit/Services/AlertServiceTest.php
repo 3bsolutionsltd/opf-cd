@@ -10,6 +10,7 @@ use App\Services\CashFlowService;
 use App\Services\ProjectProgressService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * AlertServiceTest
@@ -44,7 +45,7 @@ class AlertServiceTest extends TestCase
         $this->service = new AlertService($healthService, $paymentGapService, $cashFlowService);
     }
 
-    /** @test */
+    #[Test]
     public function it_creates_project_schedule_alert_when_behind()
     {
         // Create user
@@ -88,7 +89,7 @@ class AlertServiceTest extends TestCase
         $this->assertIsInt($result['alerts_created']);
     }
 
-    /** @test */
+    #[Test]
     public function it_prevents_duplicate_alerts_within_7_days()
     {
         $projectId = DB::table('projects')->insertGetId([
@@ -128,7 +129,7 @@ class AlertServiceTest extends TestCase
         $this->assertEquals($initialCount, $finalCount);
     }
 
-    /** @test */
+    #[Test]
     public function it_creates_overdue_expense_alert()
     {
         // Create overdue expense
@@ -147,7 +148,7 @@ class AlertServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(0, $result['alerts_created']);
     }
 
-    /** @test */
+    #[Test]
     public function it_creates_opportunity_closing_alert()
     {
         // Create opportunity closing within 7 days
@@ -168,7 +169,7 @@ class AlertServiceTest extends TestCase
         $this->assertArrayHasKey('opportunity_closing_soon', $result['alerts_by_type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_active_alert_count()
     {
         // Create dismissed alert
@@ -200,7 +201,7 @@ class AlertServiceTest extends TestCase
         $this->assertEquals(1, $count); // Only active alert counted
     }
 
-    /** @test */
+    #[Test]
     public function it_dismisses_alert_successfully()
     {
         $alertId = DB::table('alerts')->insertGetId([
@@ -223,7 +224,7 @@ class AlertServiceTest extends TestCase
         $this->assertEquals(1, $alert->dismissed_by);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_correct_alert_counts_by_severity()
     {
         DB::table('alerts')->insert([

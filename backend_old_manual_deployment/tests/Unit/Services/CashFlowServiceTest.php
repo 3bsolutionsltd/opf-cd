@@ -6,6 +6,7 @@ use Tests\TestCase;
 use App\Services\CashFlowService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * CashFlowServiceTest
@@ -31,7 +32,7 @@ class CashFlowServiceTest extends TestCase
         $this->service = new CashFlowService();
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_cash_at_hand_correctly()
     {
         // Create test account
@@ -59,14 +60,14 @@ class CashFlowServiceTest extends TestCase
         $this->assertEquals(16000, $cash);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_zero_for_no_accounts()
     {
         $cash = $this->service->getCashAtHand('USD');
         $this->assertEquals(0, $cash);
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_monthly_burn_rate_correctly()
     {
         // Create account
@@ -98,14 +99,14 @@ class CashFlowServiceTest extends TestCase
         $this->assertEquals(9000, $burnRate);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_zero_burn_rate_for_no_outflows()
     {
         $burnRate = $this->service->calculateMonthlyBurnRate('USD');
         $this->assertEquals(0, $burnRate);
     }
 
-    /** @test */
+    #[Test]
     public function it_calculates_cash_runway_correctly()
     {
         // Create account with balance
@@ -138,7 +139,7 @@ class CashFlowServiceTest extends TestCase
         $this->assertEquals(6, $runway);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_zero_runway_when_burn_rate_is_zero()
     {
         // Create account with balance but no outflows
@@ -154,7 +155,7 @@ class CashFlowServiceTest extends TestCase
         $this->assertEquals(0, $runway);
     }
 
-    /** @test */
+    #[Test]
     public function it_filters_by_currency_correctly()
     {
         // Create USD account

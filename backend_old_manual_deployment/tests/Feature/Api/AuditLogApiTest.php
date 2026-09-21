@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * AuditLogApiTest
@@ -57,14 +58,14 @@ class AuditLogApiTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_requires_authentication_for_audit_logs()
     {
         $response = $this->getJson('/api/audit-logs');
         $response->assertStatus(401);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_all_audit_logs_with_correct_structure()
     {
         DB::table('audit_logs')->insert([
@@ -120,7 +121,7 @@ class AuditLogApiTest extends TestCase
         $this->assertCount(2, $response->json('audit_logs'));
     }
 
-    /** @test */
+    #[Test]
     public function it_filters_audit_logs_by_entity_type()
     {
         DB::table('audit_logs')->insert([
@@ -160,7 +161,7 @@ class AuditLogApiTest extends TestCase
         $this->assertEquals('project', $logs[0]['entity_type']);
     }
 
-    /** @test */
+    #[Test]
     public function it_filters_audit_logs_by_action()
     {
         DB::table('audit_logs')->insert([
@@ -200,7 +201,7 @@ class AuditLogApiTest extends TestCase
         $this->assertEquals('delete', $logs[0]['action']);
     }
 
-    /** @test */
+    #[Test]
     public function it_filters_audit_logs_by_entity_id()
     {
         DB::table('audit_logs')->insert([
@@ -253,7 +254,7 @@ class AuditLogApiTest extends TestCase
         $this->assertEquals(1, $logs[1]['entity_id']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_empty_array_when_no_logs_match_filters()
     {
         $response = $this->actingAs((object)['id' => $this->userId])

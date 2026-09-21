@@ -217,23 +217,23 @@ No service calls.
                 
                 <div x-show="!loading.progress && selectedProject && dashboards.progress !== null" class="text-center py-8">
                     <div class="text-6xl font-bold text-indigo-400 mb-2">
-                        <span x-text="dashboards.progress"></span>%
+                        <span x-text="formatProgress(dashboards.progress)"></span>%
                     </div>
                     <div class="text-gray-400">Completion Rate</div>
                     <div class="mt-4 w-full h-2 bg-gray-800 rounded-full overflow-hidden">
                         <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" 
-                             :style="`width: ${dashboards.progress}%`"></div>
+                             :style="`width: ${formatProgress(dashboards.progress)}%`"></div>
                     </div>
                 </div>
                 
                 <div x-show="!loading.progress && !selectedProject && dashboards.progressAggregate !== null" class="text-center py-8">
                     <div class="text-6xl font-bold text-indigo-400 mb-2">
-                        <span x-text="dashboards.progressAggregate"></span>%
+                        <span x-text="formatProgress(dashboards.progressAggregate)"></span>%
                     </div>
                     <div class="text-gray-400">Overall Progress (All Projects)</div>
                     <div class="mt-4 w-full h-2 bg-gray-800 rounded-full overflow-hidden">
                         <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" 
-                             :style="`width: ${dashboards.progressAggregate}%`"></div>
+                             :style="`width: ${formatProgress(dashboards.progressAggregate)}%`"></div>
                     </div>
                 </div>
                 
@@ -601,7 +601,7 @@ No service calls.
                             headers: { 'Accept': 'application/json' },
                             credentials: 'same-origin'
                         });
-                        this.dashboards.progress = await response.json();
+                        this.dashboards.progress = this.formatProgress(await response.json());
                     } catch (error) {
                         console.error('Error loading progress:', error);
                     } finally {
@@ -704,13 +704,26 @@ No service calls.
                             headers: { 'Accept': 'application/json' },
                             credentials: 'same-origin'
                         });
-                        this.dashboards.progressAggregate = await response.json();
+                        this.dashboards.progressAggregate = this.formatProgress(await response.json());
                     } catch (error) {
                         console.error('Error loading aggregate progress:', error);
                         this.dashboards.progressAggregate = null;
                     } finally {
                         this.loading.progress = false;
                     }
+                },
+
+                formatProgress(value) {
+                    if (value === null || value === undefined) {
+                        return null;
+                    }
+
+                    if (typeof value === 'object') {
+                        value = value.progress ?? value.percentage ?? value.value ?? value.data;
+                    }
+
+                    const progress = Number(value);
+                    return Number.isFinite(progress) ? Math.min(100, Math.max(0, progress)) : null;
                 },
 
                 async loadAggregatePaymentGap() {

@@ -33,13 +33,26 @@ No service calls.
         })
         .then(response => response.json())
         .then(data => {
-            progress = data;
+            progress = formatProgress(data);
             loading = false;
         })
         .catch(error => {
             console.error('Error:', error);
             loading = false;
         });
+
+        function formatProgress(value) {
+            if (value === null || value === undefined) {
+                return null;
+            }
+
+            if (typeof value === 'object') {
+                value = value.progress ?? value.percentage ?? value.value ?? value.data;
+            }
+
+            const normalized = Number(value);
+            return Number.isFinite(normalized) ? Math.min(100, Math.max(0, normalized)) : null;
+        }
     ">
         <!-- Header -->
         <div class="max-w-4xl mx-auto mb-8">

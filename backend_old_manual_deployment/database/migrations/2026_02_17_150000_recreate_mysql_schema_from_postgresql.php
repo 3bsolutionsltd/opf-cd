@@ -224,6 +224,7 @@ return new class extends Migration
             $table->string('client', 255);
             $table->string('description', 255);
             $table->decimal('estimated_value', 15, 2);
+            $table->enum('currency', ['UGX', 'USD'])->default('UGX');
             $table->decimal('probability', 5, 2);
             $table->enum('stage', ['lead', 'qualified', 'proposal', 'negotiation', 'won', 'lost'])->default('lead');
             $table->string('source', 100);
